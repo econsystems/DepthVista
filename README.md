@@ -31,24 +31,24 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 
 ## How to Use
 
-- Build the package in Windows using [this Build Manual](https://github.com/econsystems/depthVista/tree/master/)
+- Build the package in Windows using [this Build Manual](https://github.com/econsystems/DepthVista/blob/main/DepthVista_Build_Manual_Windows_Rev_1_1.pdf)
 
-- Build the package in Ubuntu using [this Build Manual](https://github.com/econsystems/depthVista/tree/master/)
+- Build the package in Ubuntu using [this Build Manual](https://github.com/econsystems/DepthVista/blob/main/DepthVista_Build_Manual_Linux_Rev_1_1.pdf)
 
 
 ## File Hierarchy
 
-- SDK for Ubunutu 18.04 will be present in [this page](/https://github.com/econsystems/depthVista/tree/master/SDK/Linux/Ubuntu18.04/x64/)
+- SDK for Ubunutu 18.04 will be present in [this page](https://github.com/econsystems/DepthVista/tree/main/SDK/Linux/Ubuntu18.04/x64)
 
-- SDK for Ubunutu 20.04 will be present in [this page](/https://github.com/econsystems/depthVista/tree/master/SDK/Linux/Ubuntu20.04/x64/) 
+- SDK for Ubunutu 20.04 will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/SDK/Linux/Ubuntu20.04/x64/) 
 
-- SDK for Windows will be present in [this page](/https://github.com/econsystems/depthVista/tree/master/SDK/Windows/)
+- SDK for Windows will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/SDK/Windows/)
 
-- Source Code of DepthVista will be present in [this page](/https://github.com/econsystems/depthVista/tree/master/Source)
+- Source Code of DepthVista will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/Source)
 
 ## Releases
 
-* Latest releases can be downloaded from [this link](https://github.com/econsystems/depthVista/releases)
+* Latest releases can be downloaded from [this link](https://github.com/econsystems/DepthVista/releases)
 
 ## Release
 
