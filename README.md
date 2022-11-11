@@ -40,11 +40,11 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 
 - SDK for Ubunutu 18.04 will be present in [this page](https://github.com/econsystems/DepthVista/tree/main/SDK/Linux/Ubuntu18.04/x64)
 
-- SDK for Ubunutu 20.04 will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/SDK/Linux/Ubuntu20.04/x64/) 
+- SDK for Ubunutu 20.04 will be present in [this page](https://github.com/econsystems/DepthVista/tree/main/SDK/Linux/Ubuntu20.04/x64) 
 
-- SDK for Windows will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/SDK/Windows/)
+- SDK for Windows will be present in [this page](https://github.com/econsystems/DepthVista/tree/main/SDK/Windows)
 
-- Source Code of DepthVista will be present in [this page](/https://github.com/econsystems/DepthVista/tree/main/Source)
+- Source Code of DepthVista will be present in [this page](https://github.com/econsystems/DepthVista/tree/main/Source)
 
 ## Releases
 
