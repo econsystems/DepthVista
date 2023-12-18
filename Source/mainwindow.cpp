@@ -4,7 +4,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-
     RegisterNotificationCallback(std::bind(&MainWindow::notification_callback, this, std::placeholders::_1));
     ui->setupUi(this);
 
@@ -36,7 +35,7 @@ void MainWindow::createDisplayComponents()
     QWidget* w = new QWidget;
     QHBoxLayout* _hlayout = new QHBoxLayout();
     fps_label = new QLabel();
-    QLabel* label1 = new QLabel("DepthVista Version : 1.0.0.4");
+    QLabel* label1 = new QLabel("DepthVista Version : 1.0.0.6");
     label1->setAlignment(Qt::AlignRight);
     _hlayout->addWidget(fps_label);
     _hlayout->addWidget(label1);
@@ -69,12 +68,13 @@ void MainWindow::createDisplayComponents()
     pclDisplay->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     pclDisplay->InitDrawBuffer((PRE_DEPTH_IR_WIDTH * PRE_DEPTH_IR_HEIGHT * 3));
     ui->horizontalLayout_4->insertWidget(2, pclDisplay);
-    pclDisplay->setVisible(false);
+    pclDisplay->setVisible(false);	
+	pclDisplay->get3DIntrinsic(LENS_FOCUS_POINT_VGA_X, LENS_FOCUS_POINT_VGA_Y,
+		LENS_PRINCIPLE_AXIS_VGA_X, LENS_PRINCIPLE_AXIS_VGA_Y);
 
 }
 void MainWindow::onslidemenu()
 {
-
     if(sidebarstatechanged){
 
         side_menu->setVisible(false);
@@ -83,8 +83,8 @@ void MainWindow::onslidemenu()
                                                      QSizePolicy::Expanding));
         ui->slide_menu_button->setIcon(QIcon(":/images/open_tab.png"));
         sidebarstatechanged = false;
-    }else{
-
+    }
+    else {
         delete ui->sidemenu->takeAt(0);
         ui->sidemenu->insertWidget(0,side_menu);
         side_menu->setVisible(true);
@@ -98,9 +98,9 @@ void MainWindow::enumerateDevices()
 
     uint32_t count=0;
     QStringList devices;
+    devices.append("----Select Camera Device----");
     if(GetDeviceCount(&count)<0){
         pError("GetDeviceCount");
-
     }
     if(count>0){
         gDevicesList = new DeviceInfo[count];
@@ -112,8 +112,8 @@ void MainWindow::enumerateDevices()
             devices.append(QString(devicename.c_str()));
         }
     }
-    devices.prepend("----Select Camera Device----");
     emit deviceEnumerated(devices);
+    ui->scrollArea->setFocus();
 }
 
 void MainWindow::querycameraproperties(uint8_t cam)
@@ -125,10 +125,8 @@ void MainWindow::querycameraproperties(uint8_t cam)
     std::vector< std::pair <int,int> > camera_prop;
     uvc_prop.clear();
 
-    if ((cam & (1 << CamProp::All)) || (cam & (1 << CamProp::ColorCam_uvc)))
-    {
-        for (int id = TOF_UVC_CID_BRIGHTNESS; id <= TOF_UVC_CID_EXPSOURE_ABS; id++)
-        {
+    if ((cam & (1 << CamProp::All)) || (cam & (1 << CamProp::ColorCam_uvc))) {
+        for (int id = TOF_UVC_CID_BRIGHTNESS; id <= TOF_UVC_CID_EXPSOURE_ABS; id++) {
             UVCProp gProp;
             if (GetUVCControl(id, &gProp) > 0) {
                 qDebug() << "control values:";
@@ -143,30 +141,25 @@ void MainWindow::querycameraproperties(uint8_t cam)
         }
         emit uvcpropQueried(uvc_prop);
     }
-    if ((cam & (1 << CamProp::All)) || (cam & (1 << CamProp::ToF_cam)))
-    {
+    if ((cam & (1 << CamProp::All)) || (cam & (1 << CamProp::ToF_cam))) {
         if (GetDataMode(&data_mode) > 0) {
             camera_prop.push_back(std::make_pair(TOF_UVC_EXT_CID_DATA_MODE, data_mode));
             modifyUi(data_mode);
-            if (data_mode <= DataMode::IR_Mode)
-            {
+            if (data_mode <= DataMode::IR_Mode) {
                 if(data_mode == DataMode::IR_Mode)
                     emit tofCamModeSelected(false);
                 else
                     emit tofCamModeSelected(true);
             }
-            else if (data_mode == DataMode::Depth_IR_RGB_VGA_Mode)
-            {
+            else if (data_mode == DataMode::Depth_IR_RGB_VGA_Mode) {
                 pclDisplay->dataModeChanged(Depth_IR_RGB_VGA_Mode);
                 emit dualCamModeSelected(true);
             }
-            else if (data_mode == DataMode::Depth_IR_RGB_HD_Mode)
-            {
+            else if (data_mode == DataMode::Depth_IR_RGB_HD_Mode) {
                 pclDisplay->dataModeChanged(Depth_IR_RGB_HD_Mode);
                 emit dualCamModeSelected(false);
             }
-            else if (data_mode >= DataMode::RGB_VGA_Mode)
-            {
+            else if (data_mode >= DataMode::RGB_VGA_Mode) {
                 emit rgbCamModeSelected();
             }
         }
@@ -174,19 +167,23 @@ void MainWindow::querycameraproperties(uint8_t cam)
             camera_prop.push_back(std::make_pair(TOF_UVC_EXT_CID_DEPTH_RANGE, depthRange));
             QSettings settings(QString("config.ini"), QSettings::IniFormat);
 
-            if (depthRange == 0)
-            {
+            if (depthRange == 0) {
+                depth_max_val = TOF_APP_VAL_NEAR_SPC_DEPTH_MAX/2;
+                depth_min_val = TOF_APP_VAL_NEAR_SPC_DEPTH_MIN/2;
                 Depth_min = settings.value("Near_mode/Lower_limit").toInt();
                 Depth_max = settings.value("Near_mode/Upper_limit").toInt();
                 depth_range = (Depth_max - Depth_min) * 0.20;
+				alpha = (255 / ((double)(Depth_max + depth_range - Depth_min)));
+				beta = ((double)alpha) * Depth_min;
                 UpdateColorMap(Depth_min, Depth_max + depth_range, 4);
                 camera_prop.push_back(std::make_pair(TOF_APP_MIN_DEPTH, Depth_min));
                 camera_prop.push_back(std::make_pair(TOF_APP_MAX_DEPTH, Depth_max));
                 if (pcl_display_flag)
-                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4);
+                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4, depthRange);
             }
-            else
-            {
+            else {
+                depth_max_val = TOF_APP_VAL_FAR_SPC_DEPTH_MAX/2;
+                depth_min_val = TOF_APP_VAL_FAR_SPC_DEPTH_MIN/2;
                 Depth_min = settings.value("Far_mode/Lower_limit").toInt();
                 Depth_max = settings.value("Far_mode/Upper_limit").toInt();
                 depth_range = (Depth_max - Depth_min) * 0.05;
@@ -196,10 +193,10 @@ void MainWindow::querycameraproperties(uint8_t cam)
                 Depth_max /= 2;
                 UpdateColorMap(Depth_min, Depth_max + depth_range, 4);
                 if (pcl_display_flag)
-                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4);
+                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4, depthRange);
             }
             if (pcl_display_flag)
-                pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4);
+                pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4, depthRange);
         }
         if (GetTOFCoring(&gvalue4) > 0) {
             camera_prop.push_back(std::make_pair(TOF_UVC_EXT_CID_CORING, gvalue4));
@@ -275,8 +272,7 @@ void MainWindow::querycameraproperties(uint8_t cam)
             gvalue1 = 0;
             gvalue2 = 0;
         }
-		if (GetIMUEmbeddedData(&gvalue1))
-		{
+		if (GetIMUEmbeddedData(&gvalue1)) {
 			camera_prop.push_back(std::make_pair(TOF_HID_CID_IMU_DATA, gvalue1));
 			gvalue1 = 0;
 		}
@@ -333,8 +329,7 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
         if(SetUVCControl(ctrlID,value)<0){
             pError("SetUVCControl");
         }
-        else
-        {
+        else {
             uvc_prop[ctrlID].cur = value;
         }
         break;
@@ -342,14 +337,15 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
         stopStream();
         set_mode = (DataMode)((value == 0 )? value: value = value + 1);
 
-        if(SetDataMode(set_mode)<0){
+        if(SetDataMode(set_mode)<0) {
             pError("SetDataMode");
-        }else{
+            startStream();
+        }
+        else {
 			qDebug() << "SetDataMode success\n";
             data_mode = set_mode;
             if (data_mode <= DataMode::IR_Mode)
             {
-                //rgbDMapping_flag = false;
                 if (data_mode == DataMode::IR_Mode)
                     emit tofCamModeSelected(false);
                 else
@@ -367,7 +363,6 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
             }
             else if (data_mode >= DataMode::RGB_VGA_Mode)
             {
-                //rgbDMapping_flag = false;
                 emit rgbCamModeSelected();
             }
             fps_label->setText("Current FPS:" + QString::number(0));
@@ -383,17 +378,16 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
             else
                 modifyUi(data_mode);
 
-            queryCamPropFlag = (1 << CamProp::ColorCam_uvc) | (1 << CamProp::ColorCam_extension);
-            querycameraproperties(queryCamPropFlag);
-
             startStream();
         }
         break;
     case TOF_UVC_EXT_CID_DEPTH_RANGE:
         stopStream();
-        if(SetDepthRange(value)<0){
+        if(SetDepthRange(value)<0) {
             pError("SetDepthRange");
-        }else{
+            startStream();
+        }
+        else {
             depthRange = value;
             camera_prop.push_back(std::make_pair(TOF_UVC_EXT_CID_DEPTH_RANGE, depthRange));
 
@@ -406,11 +400,11 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
                 depth_range = (Depth_max - Depth_min) * 0.20;
                 UpdateColorMap(Depth_min, Depth_max + depth_range , 4);
                 if (pcl_display_flag)
-                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4);
+                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4, depthRange);
                 camera_prop.push_back(std::make_pair(TOF_APP_MIN_DEPTH,Depth_min));
                 camera_prop.push_back(std::make_pair(TOF_APP_MAX_DEPTH,Depth_max));
-            }else
-            {
+            }
+            else {
                 Depth_min = settings.value("Far_mode/Lower_limit").toInt();
                 Depth_max = settings.value("Far_mode/Upper_limit").toInt();
                 depth_range = (Depth_max - Depth_min) * 0.05;
@@ -420,7 +414,7 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
                 Depth_max /= 2;
                 UpdateColorMap(Depth_min, Depth_max + depth_range , 4);
                 if (pcl_display_flag)
-                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4);
+                    pclDisplay->getColorMapProp(Depth_min, Depth_max + depth_range, 4, depthRange);
 
             }
             fps_label->setText("Current FPS:" + QString::number(0));
@@ -441,26 +435,25 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
         break;
 
     case TOF_UVC_EXT_CID_CORING:
-        if (value <= 65535)
-        {
-            if(SetTOFCoring(value)<0){
+        if (value <= 65535) {
+            if(SetTOFCoring(value)<0) {
                 pError("SetTOFCoring");
             }
         }
         break;
     case TOF_UVC_EXT_CID_IR_GAIN:
-        if(SetTOFIRGain(value)<0){
+        if(SetTOFIRGain(value)<0) {
             pError("SetTOFIRGain");
         }
         break;
     case TOF_HID_CID_ANTI_FLICKER_DETECTION:
-        if(SetAntiFlickerDetection(value)<0){
+        if(SetAntiFlickerDetection(value)<0) {
             pError("SetAntiFlickerDetection");
         }
         break;
  
     case TOF_HID_CID_SPECIAL_EFFECT:
-        switch(value){
+        switch(value) {
         case 0:
             value= TOF_APP_VAL_SPC_EFFECT_NORMAL;
             break;
@@ -478,54 +471,56 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
             break;
         }
 
-        if(SetSpecialEffect(value)<0){
+        if(SetSpecialEffect(value)<0) {
             pError("SetSpecialEffect");
         }
         break;
     case TOF_HID_CID_DENOISE:
-        if(SetDenoise(value)<0){
+        if(SetDenoise(value)<0) {
             pError("SetDenoise");
         }
         break;
     case TOF_HID_CID_ORIENTATION:
-        if(SetOrientation(value)<0){
+        if(SetOrientation(value)<0) {
             pError("SetOrientation");
         }
 
         break;
     case TOF_HID_CID_EXPOSURE_COMP:
-        if(SetExposureCompensation(value)<0){
+        if(SetExposureCompensation(value)<0) {
             pError("SetExposureCompensation");
         }
         break;
     case TOF_HID_CID_FPS_CTRL:
-        if(SetFrameRateCtrl(value)<0){
+        if(SetFrameRateCtrl(value)<0) {
             pError("SetFrameRateCtrl");
         }
         break;
     case TOF_APP_CID_DEPTH_REGION:
-        if(SetAvgRegion((AvgRegion)value)<0){
+        if(SetAvgRegion((AvgRegion)value)<0) {
             pError("SetAvgRegion");
         }
 
         avgRegionFlag ^= (1<<value);
-        if(value==AvgRegion::MouseLivePtr){
+        if(value==AvgRegion::CustomPtr) {
             avgRegionFlag&=~(1<<AvgRegion::Center);
-        }else{
-            avgRegionFlag&=~(1<<AvgRegion::MouseLivePtr);
         }
-        if(data_mode!=IR_Mode && data_mode<=Depth_IR_RGB_HD_Mode && data_mode!=Raw_Mode){
-            if(avgRegionFlag &(1<<AvgRegion::MouseLivePtr)){
+        else {
+            avgRegionFlag&=~(1<<AvgRegion::CustomPtr);
+        }
+        if(data_mode!=IR_Mode && data_mode<=Depth_IR_RGB_HD_Mode && data_mode!=Raw_Mode) {
+            if(avgRegionFlag &(1<<AvgRegion::CustomPtr)) {
                 depthdisplay->setMouseTracking(true);
                 depthdisplay->installEventFilter(this);
-            }else{
+            }
+            else {
                 depthdisplay->setMouseTracking(false);
                 depthdisplay->removeEventFilter(this);
             }
         }
         break;
     case TOF_APP_CID_CURSOR_COLOR:
-        if(SetCursorColor(value)<0){
+        if(SetCursorColor(value)<0) {
             pError("SetCursorColor");
         }
         break;
@@ -535,7 +530,7 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
 		}
 		break;
     case TOF_APP_CID_DEPTH_PLANARIZE:
-        if(SetPlanarization(value)<0){
+        if(SetPlanarization(value)<0) {
             pError("SetPlanarization");
         }
         break;
@@ -546,34 +541,41 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
         y_comp = value/100.0;
         break;
     case TOF_UVC_CID_SET_DEFAULT:
-		for (uint8_t ctrl_ID = TOF_UVC_CID_BRIGHTNESS; ctrl_ID <= TOF_UVC_CID_EXPSOURE_ABS; ctrl_ID++)
-		{
-			if ((ctrl_ID == TOF_UVC_CID_WB_TEMP || ctrl_ID == TOF_UVC_CID_WB_AUTO) && uvc_prop[TOF_UVC_CID_WB_AUTO].cur)
-				continue;
+        for (int ctrl_ID = TOF_UVC_CID_EXPSOURE_ABS; ctrl_ID >= TOF_UVC_CID_BRIGHTNESS ; ctrl_ID--) {
 
-			if ((ctrl_ID == TOF_UVC_CID_EXPSOURE_ABS || ctrl_ID == TOF_UVC_CID_EXPOSURE_AUTO) && !uvc_prop[TOF_UVC_CID_EXPOSURE_AUTO].cur)
-				continue;
+            if ((ctrl_ID == TOF_UVC_CID_WB_TEMP || ctrl_ID == TOF_UVC_CID_WB_AUTO) && uvc_prop[TOF_UVC_CID_WB_AUTO].cur)
+                continue;
 
-			if ((data_mode == DataMode::Depth_IR_RGB_VGA_Mode || data_mode == DataMode::Depth_IR_RGB_HD_Mode) && ctrl_ID == TOF_UVC_CID_EXPSOURE_ABS)
-			{
-				continue;
-			}
+            if ((ctrl_ID == TOF_UVC_CID_EXPSOURE_ABS || ctrl_ID == TOF_UVC_CID_EXPOSURE_AUTO) && !uvc_prop[TOF_UVC_CID_EXPOSURE_AUTO].cur)
+                continue;
 
-			if (SetUVCControl(ctrl_ID, uvc_prop[ctrl_ID].default_val) < 0) {
-				pError("SetUVCControl");
-			}
-			
-		}
-		queryCamPropFlag = (1 << CamProp::ColorCam_uvc) | (1 << CamProp::Default);
-		querycameraproperties(queryCamPropFlag);
-		queryCamPropFlag = 1 << CamProp::All;
-		break;
+            if ((data_mode == DataMode::Depth_IR_RGB_VGA_Mode || data_mode == DataMode::Depth_IR_RGB_HD_Mode) && ctrl_ID == TOF_UVC_CID_EXPSOURE_ABS) {
+                continue;
+            }
+
+            if(ctrl_ID == TOF_UVC_CID_EXPOSURE_AUTO) {
+                if (SetUVCControl(ctrl_ID, 0) < 0) {
+                    pError("SetUVCControl");
+                }
+            }
+            else {
+                if (SetUVCControl(ctrl_ID, uvc_prop[ctrl_ID].default_val) < 0) {
+                    pError("SetUVCControl");
+                }
+            }
+
+
+        }
+        queryCamPropFlag = (1 << CamProp::ColorCam_uvc) | (1 << CamProp::Default);
+        querycameraproperties(queryCamPropFlag);
+        queryCamPropFlag = 1 << CamProp::All;
+        break;
+
     case TOF_HID_CID_SET_DEFAULT:
         if (SetDefault() < 0) {
             pError("SetCursorColor");
         }
-        else
-        {
+        else {
             queryCamPropFlag = (1 << CamProp::ColorCam_extension) | (1 << CamProp::Default);
             querycameraproperties(queryCamPropFlag);
 			queryCamPropFlag = 1 << CamProp::All;
@@ -581,12 +583,11 @@ void MainWindow::onSetCamProperty(int ctrlID, int value)
         break;
     case TOF_APP_GET_FIRMWARE_VERSION:
         ReadFirmwareVersion(&gMajorVersion, &gMinorVersion1, &gMinorVersion2, &gMinorVersion3);
-         emit firmwareVersionRead(gMajorVersion, gMinorVersion1, gMinorVersion2, gMinorVersion3);
-         break;
+        emit firmwareVersionRead(gMajorVersion, gMinorVersion1, gMinorVersion2, gMinorVersion3);
+        break;
     case TOF_APP_GET_UNIQUE_ID:
 		uniqueID = 0;
         GetUniqueID(&uniqueID);
-		qDebug() << "Unique ID is : " << uniqueID;
         emit uniqueIDRead(uniqueID);
         break;
     case TOF_APP_AVERAGE_IR_DISPLAY:
@@ -604,40 +605,49 @@ void MainWindow::onSetCamProperty(int ctrlID, int value, int value1, int value2)
 
     case TOF_HID_CID_AUTO_EXP_ROI:
         auto_roi_win_size = value1;
-        if(SetAutoExposureROI(value,yuvdisplay->size().width(),yuvdisplay->size().height(),0,0,auto_roi_win_size)<0)
-        {
+        if(SetAutoExposureROI(value,yuvdisplay->size().width(),yuvdisplay->size().height(),0,0,auto_roi_win_size)<0) {
             pError("SetAutoExposureROI");
         }
-        if(value==2){
+        if(value==2) {
             yuvdisplay->setMouseTracking(true);
             yuvdisplay->installEventFilter(this);
-        }else{
+        }
+        else {
             yuvdisplay->setMouseTracking(false);
             yuvdisplay->removeEventFilter(this);
         }
         break;
     case TOF_HID_CID_FACE_DETECTION:
-        if(SetFaceDetection(value,value1,value2)<0){
+        if(SetFaceDetection(value,value1,value2)<0) {
             pError("SetFaceDetection");
         }
         break;
     case TOF_HID_CID_SMILE_DETECTION:
-        if(SetSmileDetection(value,value1)<0){
+        if(SetSmileDetection(value,value1)<0) {
             pError("SetSmileDetection");
         }
         break;
     case TOF_APP_CID_SPC_DEPTH_RANGE:
-        if(value){
+        if(value) {
             spc_ply_flag = true;
             if(depthRange == DepthRange::FarRange )
             {
                 value1 /= 2;
                 value2 /= 2;
             }
-            depth_max_val = value1;
-            depth_min_val = value2;
-        }else{
+            depth_min_val = value1;
+            depth_max_val = value2;
+        }
+        else {
             spc_ply_flag = false;
+            if(depthRange == 0) {
+                depth_max_val = TOF_APP_VAL_NEAR_SPC_DEPTH_MAX/2;
+                depth_min_val = TOF_APP_VAL_NEAR_SPC_DEPTH_MIN/2;
+            }
+            else {
+                depth_max_val = TOF_APP_VAL_FAR_SPC_DEPTH_MAX/2;
+                depth_min_val = TOF_APP_VAL_FAR_SPC_DEPTH_MIN/2;
+            }
         }
         break;
     }
@@ -654,7 +664,7 @@ void MainWindow::modifySize(DataMode dataMode)
     windowheight = (int)screen_height_mm * 0.9;
     windowwidth = (int)screen_width_mm * 0.75;
 
-    switch(dataMode){
+    switch(dataMode) {
         case Depth_IR_Mode:
             widgetheight = windowheight/2.00;
             widgetwidth = widgetheight*vga_aspect_ratio;
@@ -725,8 +735,7 @@ void MainWindow::modifyUi(DataMode dataMode)
         irdisplay->setVisible(true);
         depthdisplay->InitDrawBuffer((PRE_DEPTH_IR_WIDTH*PRE_DEPTH_IR_HEIGHT*3));
         depthdisplay->setVisible(true);
-        if (pcl_display_flag)
-        {
+        if (pcl_display_flag) {
             pclDisplay->setInitialPos();
             pclDisplay->setVisible(true);
         }
@@ -736,8 +745,7 @@ void MainWindow::modifyUi(DataMode dataMode)
         irdisplay->setVisible(false);
         depthdisplay->InitDrawBuffer((PRE_DEPTH_IR_WIDTH*PRE_DEPTH_IR_HEIGHT*3));
         depthdisplay->setVisible(true);
-        if (pcl_display_flag)
-        {
+        if (pcl_display_flag) {
             pclDisplay->setInitialPos();
             pclDisplay->setVisible(true);
         }
@@ -757,8 +765,7 @@ void MainWindow::modifyUi(DataMode dataMode)
         depthdisplay->setVisible(true);
         yuvdisplay->InitDrawBuffer(PRE_RGB_VGA_WIDTH*PRE_RGB_VGA_HEIGHT*2);
         yuvdisplay->setVisible(true);
-        if (pcl_display_flag)
-        {
+        if (pcl_display_flag) {
             pclDisplay->setInitialPos();
 			pclDisplay->InitDrawBuffer((PRE_RGB_VGA_WIDTH*PRE_RGB_VGA_HEIGHT * 3));
             pclDisplay->setVisible(true);
@@ -771,8 +778,7 @@ void MainWindow::modifyUi(DataMode dataMode)
         depthdisplay->setVisible(true);
         yuvdisplay->InitDrawBuffer(PRE_RGB_HD_WIDTH*PRE_RGB_HD_HEIGHT*2);
         yuvdisplay->setVisible(true);
-        if (pcl_display_flag)
-        {
+        if (pcl_display_flag) {
             pclDisplay->setInitialPos();
 			pclDisplay->InitDrawBuffer((PRE_RGB_HD_WIDTH*PRE_RGB_HD_HEIGHT * 3));
             pclDisplay->setVisible(true);
@@ -818,8 +824,7 @@ void MainWindow::modifyUi(DataMode dataMode)
             pclDisplay->setVisible(false);
         break;
     }
-    if (pcl_display_flag_1 == false)
-    {
+    if (pcl_display_flag_1 == false) {
         pclDisplay->setVisible(false);
     }
 
@@ -827,10 +832,11 @@ void MainWindow::modifyUi(DataMode dataMode)
 
 void MainWindow::onInputSelected(int index)
 {
-	qDebug() << "Before opening device index is : " << index;
-	qDebug() << "Before opening device oldindex is : " << oldindex;
-	if (index != oldindex)
-	{
+    if(DB_LOW) {
+        qDebug() << "Before opening device index is : " << index;
+        qDebug() << "Before opening device oldindex is : " << oldindex;
+    }
+	if (index != oldindex) {
 		if (OpenDevice(index - 1) < 0) {
 			pError("OpenDevice:");
 			return;
@@ -846,10 +852,9 @@ void MainWindow::onInputSelected(int index)
 		int read_length_depth;
 		read_length_depth = 0;
 		uint16_t err_no;
-		if ((!calibParamObtained))
-		{
-			if (CalibReadReqDepthInstrinsic(&read_length_depth) > 0)
-			{
+		if ((!calibParamObtained)) {
+            int result = CalibReadReqDepthInstrinsic(&read_length_depth);
+            if (result > 0) {
 				unsigned char* DepthIntrinsicBuffer;
 				FILE* fp1;
 				DepthIntrinsicBuffer = (unsigned char*)malloc(read_length_depth);
@@ -862,15 +867,12 @@ void MainWindow::onInputSelected(int index)
 				else
 					qDebug() << "read failed " << read_length_depth << "\n";
 
-				if ((fp1 = fopen("depth_single_write.yml", "wb+")))
-				{
+				if ((fp1 = fopen("depth_single_write.yml", "wb+"))) {
 					fwrite(DepthIntrinsicBuffer, 1, read_length_depth, fp1);
 					fclose(fp1);
 				}
-				else
-				{
+				else {
 					qDebug() << "creating new file failed " << err_no << "\n";
-
 				}
 				readDepthIntrinsic.open("depth_single_write.yml", cv::FileStorage::READ);
 				if (!readDepthIntrinsic.isOpened()) {
@@ -880,15 +882,13 @@ void MainWindow::onInputSelected(int index)
 				readDepthIntrinsic["SCCD_D"] >> depth_distortion;
 				readDepthIntrinsic.release();
 				depthIntrinsicData = true;
-			}
-			else
-			{
+            }
+			else {
 				depthIntrinsicData = false;
 				qDebug() << "calib read req depth intrinsic failed\n";
 			}
 			read_length_depth = 0;
-			if (CalibReadReqRGBInstrinsic(&read_length_depth) > 0)
-			{
+			if (CalibReadReqRGBInstrinsic(&read_length_depth) > 0) {
 				unsigned char* DepthIntrinsicBuffer;
 				FILE* fp1;
 				DepthIntrinsicBuffer = (unsigned char*)malloc(read_length_depth);
@@ -901,13 +901,11 @@ void MainWindow::onInputSelected(int index)
 				else
 					qDebug() << "read failed " << read_length_depth << "\n";
 
-				if ((fp1 = fopen("rgb_single_write.yml", "wb+")))
-				{
+				if ((fp1 = fopen("rgb_single_write.yml", "wb+"))) {
 					fwrite(DepthIntrinsicBuffer, 1, read_length_depth, fp1);
 					fclose(fp1);
 				}
-				else
-				{
+				else {
 					qDebug() << "creating new file failed " << err_no << "\n";
 
 				}
@@ -919,18 +917,14 @@ void MainWindow::onInputSelected(int index)
 				readRGBIntrinsic["SCCD_RGB"] >> rgb_distortion;
 				readRGBIntrinsic.release();
 				qDebug() << "rgb_single_write\n";
-
-
 				rgbIntrinsicData = true;
 			}
-			else
-			{
+			else {
 				rgbIntrinsicData = false;
 				qDebug() << "calib read req RGB intrinsic failed\n";
 			}
 			read_length_depth = 0;
-			if (CalibReadReqExtrinsic(&read_length_depth) > 0)
-			{
+			if (CalibReadReqExtrinsic(&read_length_depth) > 0) {
 				unsigned char* DepthIntrinsicBuffer;
 				FILE* fp1;
 				DepthIntrinsicBuffer = (unsigned char*)malloc(read_length_depth);
@@ -943,13 +937,11 @@ void MainWindow::onInputSelected(int index)
 				else
 					qDebug() << "read failed " << read_length_depth << "\n";
 
-				if ((fp1 = fopen("stereo_extrinsic_write.yml", "wb+")))
-				{
+				if ((fp1 = fopen("stereo_extrinsic_write.yml", "wb+"))) {
 					fwrite(DepthIntrinsicBuffer, 1, read_length_depth, fp1);
 					fclose(fp1);
 				}
-				else
-				{
+				else {
 					qDebug() << "creating new file failed " << err_no << "\n";
 
 				}
@@ -966,14 +958,12 @@ void MainWindow::onInputSelected(int index)
 				readExtrinsic.release();
 				extrinsicData = true;
 			}
-			else
-			{
+			else {
 				extrinsicData = false;
 				qDebug() << "calib read req extrinsic failed\n";
 			}
 
-			if (depthIntrinsicData && rgbIntrinsicData && extrinsicData)
-			{
+			if (depthIntrinsicData && rgbIntrinsicData && extrinsicData) {
 				transform_matrix = (cv::Mat_<double>(4, 4) << rotation_matrix.at<double>(0, 0), rotation_matrix.at<double>(0, 1), rotation_matrix.at<double>(0, 2), translation_matrix.at<double>(0, 0),
 					rotation_matrix.at<double>(1, 0), rotation_matrix.at<double>(1, 1), rotation_matrix.at<double>(1, 2), translation_matrix.at<double>(0, 1),
 					rotation_matrix.at<double>(2, 0), rotation_matrix.at<double>(2, 1), rotation_matrix.at<double>(2, 2), translation_matrix.at<double>(0, 2),
@@ -984,7 +974,8 @@ void MainWindow::onInputSelected(int index)
 
 				calibParamObtained = true;
 				qDebug() << "transformation matrix done\n";
-
+                pclDisplay->get3DIntrinsic(depth_intrinsic.at<double>(0, 0), depth_intrinsic.at<double>(1, 1),
+                    depth_intrinsic.at<double>(0, 2), depth_intrinsic.at<double>(1, 2));
 			}
 		}
 	}
@@ -994,20 +985,21 @@ void MainWindow::getFrame()
 {
 	if (!stopFlag) {
 		if (GetNextFrame() == Result::Ok) {
+			saveDepthFrame_start = saveDepthFrame;
+            saveIRFrame_start = saveIRFrame;
+            saveRGBFrame_start = saveRGBFrame;
+            savePLY_start = savePLY;
+            saveRawFrame_start = saveRawFrame;
 
-            if(startedSavingFrames)
-            {
-                saveDepthFrame_start = saveDepthFrame;
-                saveIRFrame_start = saveIRFrame;
-                saveRGBFrame_start = saveRGBFrame;
-                savePLY_start = savePLY;
-                saveRawFrame_start = saveRawFrame;
-            }
-            if (startedSavingFrames && (saveDepthFrameCount == 0 && saveIRFrameCount == 0 && saveRGBFrameCount == 0 && saveRawFrameCount == 0 && savePLYFrameCount == 0 && saved_ply_flag))
-            {
-				emit savingFramesComplete();
+            if (startedSavingFrames && (saveDepthFrameCount == 0 && saveIRFrameCount == 0 && saveRGBFrameCount == 0 && saveRawFrameCount == 0 && savePLYFrameCount == 0 && saved_ply_flag && plyImageSaveStatus)) {
+                emit savingFramesComplete();
                 startedSavingFrames = false;
 			}
+            if (startedSavingFrames && (saveDepthFrameCount == 0 && saveIRFrameCount == 0 && saveRGBFrameCount == 0 && saveRawFrameCount == 0 && savePLYFrameCount == 0 && saved_ply_flag && !plyImageSaveStatus)) {
+                emit othersavedoneplyfail();
+                plyImageSaveStatus = true;
+                startedSavingFrames = false;
+            }
 
             QString TimeStamp = QDateTime::currentDateTime().toString("yyyy_MM_dd_hh_mm_ss_zzz");
 
@@ -1015,30 +1007,25 @@ void MainWindow::getFrame()
 				if (yuvdisplay->isVisible() || saveRGBFrame_start) {
 					if (GetToFFrame(FrameType::RGBFrame, &ToFRGBFrame) > 0) {
 						memcpy(UYVY_frame.data, ToFRGBFrame.frame_data, ToFRGBFrame.total_size);                                            
-                        if (yuvdisplay->isVisible())
-                        {
+                        if (yuvdisplay->isVisible()) {
 							yuvdisplay->DisplayVideoFrame((unsigned char*)ToFRGBFrame.frame_data, ToFRGBFrame.width, ToFRGBFrame.height);
 						}
 
-                        if (saveRGBFrame_start /*&& saveCorrespondingRGB */)
-                        {
+						if (saveRGBFrame_start && saveCorrespondingRGB ) {
 							cv::cvtColor(UYVY_frame, UYVY_frame_cpy, cv::COLOR_YUV2BGR_UYVY);
-                            if (saveRGBFrameCount > 0)
-                            {
+                            if (saveRGBFrameCount > 0) {
 								QString RGBFileName;
                                 RGBFileName = saveRGBDir;
                                 QTextStream(&RGBFileName) << "/DepthVista_RGB" << "_" << TimeStamp << ".bmp";
                                 QByteArray name_temp = RGBFileName.toLocal8Bit();
                                 std::string str = std::string(name_temp);
-                                /* convert string to char**/
                                 char* file_name = (char*)str.c_str();
                                 cv::imwrite(file_name, UYVY_frame_cpy);
                                 saveRGBFrameCount--;
-//                                if (savePLY)
-//                                    saveCorrespondingRGB = false;
+                                if (savePLY)
+									saveCorrespondingRGB = false;
 							}
-                            else
-                            {
+                            else {
 								saveRGBFrame = false;
                                 saveRGBFrame_start = false;
 							}
@@ -1047,32 +1034,28 @@ void MainWindow::getFrame()
                 }
             }
             
-			if (data_mode != IR_Mode && data_mode <= Depth_IR_RGB_HD_Mode) 
-			{
-				if (GetToFFrame(FrameType::DepthColorMap, &ToFDepthColorMapFrame) > 0) 
-				{
+            if (data_mode != IR_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
+				if (GetToFFrame(FrameType::DepthColorMap, &ToFDepthColorMapFrame) > 0) {
 					Depthcolormap.data = (uchar*)ToFDepthColorMapFrame.frame_data;
-                    if (depthdisplay->isVisible()) {
-						depthdisplay->DisplayVideoFrame((unsigned char*)ToFDepthColorMapFrame.frame_data, ToFDepthColorMapFrame.width, ToFDepthColorMapFrame.height);
-                        if (saveDepthFrame_start /*&& saveCorrespondingDepth*/)
-                        {
+                    if (depthdisplay->isVisible() || saveDepthFrame_start) {
+                        depthdisplay->DisplayVideoFrame((unsigned char*)ToFDepthColorMapFrame.frame_data, ToFDepthColorMapFrame.width, ToFDepthColorMapFrame.height);
+                        if (saveDepthFrame_start) {
 							Depthcolormap_cpy = Depthcolormap.clone();
-                            if (saveDepthFrameCount > 0)
-                            {
+                            if (saveDepthFrameCount > 0) {
 								QString DepthFileName;
                                 DepthFileName = saveDepthDir;
+                                struct tm* tm;
+                                time_t t = time(0);
+                                tm = localtime(&t);
+                                QTime millisecond;
                                 QTextStream(&DepthFileName) << "/DepthVista_Depth" << "_" << TimeStamp << ".bmp";
                                 QByteArray name_temp = DepthFileName.toLocal8Bit();
                                 std::string str = std::string(name_temp);
-                                /* convert string to char**/
                                 char* file_name = (char*)str.c_str();
                                 cv::imwrite(file_name, Depthcolormap_cpy);
-//                                if (savePLY)
-//                                    saveCorrespondingDepth = false;
 								saveDepthFrameCount--;
                             }
-                            else
-                            {
+                            else {
 								saveDepthFrame = false;
                                 saveDepthFrame_start = false;
                             }
@@ -1080,32 +1063,23 @@ void MainWindow::getFrame()
                     }
                 }
                 
-				if (pcl_display_flag && pclDisplay->isVisible() || savePLY_start || saveRawFrame_start) {
+                if ((pcl_display_flag && pclDisplay->isVisible()) || savePLY_start || saveRawFrame_start) {
                     if (GetToFFrame(FrameType::DepthRawFrame, &ToFDepthRawFrame) > 0) {
-
 							memcpy(DepthImg_Y16.data, ToFDepthRawFrame.frame_data, ToFDepthRawFrame.total_size);
-                        if (rgbDMapping_flag && (data_mode == Depth_IR_RGB_VGA_Mode || data_mode == Depth_IR_RGB_HD_Mode))
-                        {
-							if (GetToFFrame(FrameType::RGBFrame, &ToFRGBFrame) > 0)
-                            {
+                        if (rgbDMapping_flag && (data_mode == Depth_IR_RGB_VGA_Mode || data_mode == Depth_IR_RGB_HD_Mode)) {
+							if (GetToFFrame(FrameType::RGBFrame, &ToFRGBFrame) > 0) {
 								memcpy(UYVY_frame.data, ToFRGBFrame.frame_data, ToFRGBFrame.total_size);
                             }
-
-					
                             cv::undistort(DepthImg_Y16, depthUndistort, depth_intrinsic, depth_distortion, depth_intrinsic_new);
-							if (data_mode == Depth_IR_RGB_VGA_Mode)
-							{
+							if (data_mode == Depth_IR_RGB_VGA_Mode) {
 								cv::rgbd::registerDepth(depth_intrinsic, rgb_intrinsic, rgb_distortion, transform_matrix, DepthImg_Y16, cv::Size(640, 480), registeredDepth, true);
 								cv::cvtColor(UYVY_frame, rgbFrame, cv::COLOR_YUV2BGR_UYVY);
 								pclDisplay->DisplayVideoFrame((unsigned char*)registeredDepth.data, (unsigned char*)rgbFrame.data, rgbFrame.cols, rgbFrame.rows);
 
 							}
-							else if (data_mode == Depth_IR_RGB_HD_Mode)
-							{
-								try
-								{
-                                    if (!depth_intrinsic.empty() && !rgbHD_intrinsic.empty() && !rgb_distortion.empty() && !transform_matrix.empty() && !depthUndistort.empty())
-                                    {
+							else if (data_mode == Depth_IR_RGB_HD_Mode) {
+								try {
+                                    if (!depth_intrinsic.empty() && !rgbHD_intrinsic.empty() && !rgb_distortion.empty() && !transform_matrix.empty() && !depthUndistort.empty()) {
                                         qDebug() << "Input mat is NOT empty";
                                         cv::rgbd::registerDepth(depth_intrinsic, rgbHD_intrinsic, rgb_distortion, transform_matrix, depthUndistort, cv::Size(1280, 720), writeRegisteredDepthHD, true);
                                     }
@@ -1114,32 +1088,39 @@ void MainWindow::getFrame()
 									cv::cvtColor(UYVY_frame, rgbFrame, cv::COLOR_YUV2BGR_UYVY);
 									pclDisplay->DisplayVideoFrame((unsigned char*)writeRegisteredDepthHD.data, (unsigned char*)rgbFrame.data, rgbFrame.cols, rgbFrame.rows);
 								}
-								catch(...)
-								{
+								catch(...) {
 									qDebug() << "registerDepthFailed";
 								}
 							}
                         }
-						else
-						{
-#if 0
-							if (undistortDepth && calibParamObtained)
-							{
-								cv::undistort(DepthImg_Y16, depthUndistort, depth_intrinsic, depth_distortion, depth_intrinsic);
-								pclDisplay->DisplayVideoFrame((unsigned char*)depthUndistort.data, NULL, ToFDepthRawFrame.width, ToFDepthRawFrame.height);
-							}
-							else
-							{
-#endif
-								pclDisplay->DisplayVideoFrame((unsigned char*)DepthImg_Y16.data, NULL, ToFDepthRawFrame.width, ToFDepthRawFrame.height);
-							//}
-						}
-						if (savePLY_start)
-                        {
+						else {
+							pclDisplay->DisplayVideoFrame((unsigned char*)DepthImg_Y16.data, NULL, ToFDepthRawFrame.width, ToFDepthRawFrame.height);
+                        }
+                        if (saveRawFrame_start && saveCorrespondingRaw) {
+                            if (saveRawFrameCount > 0) {
+                                QString saveRawFileName;
+                                saveRawFileName = saveRAWDir;
+                                QTextStream(&saveRawFileName) << "/DepthVista_Raw" << "_" << TimeStamp << ".raw";
+                                std::string str = saveRawFileName.toStdString();
+                                const char* file_name = str.c_str();
+                                FILE* fp;
+                                fp = fopen(file_name, "wb+");
+                                fwrite(DepthImg_Y16.data, DepthImg_Y16.total() * DepthImg_Y16.channels() * DepthImg_Y16.elemSize1(), 1, fp);
+                                fclose(fp);
+
+                                saveRawFrameCount--;
+                                if (savePLY)
+                                    saveCorrespondingRaw = false;
+                            }
+                            else {
+                                saveRawFrame = false;
+                                saveRawFrame_start = false;
+                            }
+                        }
+						if (savePLY_start) {
 							savingRaw++;
                             QString savePLYFileName;
-                            if (savePLYFrameCount > 0)
-                            {
+                            if (savePLYFrameCount > 0) {
 								savePLYFileName = save3dDir;
                                 QTextStream(&savePLYFileName) << "/DepthVista_PLY" << "_" << TimeStamp << ".ply";
                                 savePLYfile_name = savePLYFileName;
@@ -1148,92 +1129,61 @@ void MainWindow::getFrame()
                                 savePLYFrameCount--;
                                 save_ply_flag = true;
                                 savingPLY = true;
+								if (saveDepthFrame)
+									saveCorrespondingDepth = true;
+								if (saveIRFrame)
+                                    saveCorrespondingIR = true;
+								if (saveRGBFrame)
+									saveCorrespondingRGB = true;
+								if (saveRawFrame)
+									saveCorrespondingRaw = true;
                             }
-                            else
-                            {
+                            else {
 								savePLY = false;
                                 savePLY_start = false;
 							}
 						}
-                        
-                        if (saveRawFrame_start /*&& saveCorrespondingRaw*/)
-                        {
-							if (saveRawFrameCount > 0)
-                            {
-								QString saveRawFileName;
-                                saveRawFileName = saveRAWDir;
-                                QTextStream(&saveRawFileName) << "/DepthVista_Raw" << "_" << TimeStamp << ".raw";
-                                std::string str = saveRawFileName.toStdString();
-                                /* convert string to char**/
-                                const char* file_name = str.c_str();
-                                qDebug() << "Raw file_name is : " << file_name << "\n";
-                                FILE* fp;
-                                fp = fopen(file_name, "wb+");
-                                fwrite(DepthImg_Y16.data, DepthImg_Y16.total() * DepthImg_Y16.channels() * DepthImg_Y16.elemSize1(), 1, fp);
-                                fclose(fp);
-                                
-								saveRawFrameCount--;
-//                                if (savePLY)
-//                                    saveCorrespondingRaw = false;
-							}
-                            else
-                            {
-								saveRawFrame = false;
-                                saveRawFrame_start = false;
-							}
-                        }
                     }
 				}
 			}
 
-			if (data_mode != Depth_Mode && data_mode <= Depth_IR_RGB_HD_Mode)
-			{
+			if (data_mode != Depth_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
 				if (irdisplay->isVisible() || saveIRFrame_start) {
 					if (GetToFFrame(FrameType::IRPreviewFrame, &ToFIrFrame) > 0) {
 						if(irdisplay->isVisible())
 							irdisplay->DisplayVideoFrame((unsigned char*)ToFIrFrame.frame_data, ToFIrFrame.width, ToFIrFrame.height);
-                    if (saveIRFrame_start/* && saveCorrespondingIR */)
-                    {
-						memcpy(IRImg_cpy.data, ToFIrFrame.frame_data, ToFIrFrame.total_size);
-                        if (saveIRFrameCount > 0)
-                        {
-							QString IRFileName;
-                            IRFileName = saveIRDir;
-                            QTextStream(&IRFileName) << "/DepthVista_IR" << "_"<< TimeStamp << ".raw";
-                            QByteArray name_temp = IRFileName.toLocal8Bit();
-                            std::string str = std::string(name_temp);
-                            /* convert string to char**/
-
-                            char* file_name = (char*)str.c_str();
-
-                            FILE* fp;
-                            fp = fopen(file_name, "wb+");
-                            fwrite(IRImg_cpy.data, IRImg_cpy.total()* IRImg_cpy.channels()* IRImg_cpy.elemSize1(), 1, fp);
-                            fclose(fp);
-                            saveIRFrameCount--;
-//                            if (savePLY)
-//                                saveCorrespondingIR = false;
-						}
-                        else
-                        {
-							savingRaw = 0;
-                            saveIRFrame = false;
-                            saveIRFrame_start = false;
-						}
-                    }
-					}
+                        if (saveIRFrame_start) {
+                            memcpy(IRImg_cpy.data, ToFIrFrame.frame_data, ToFIrFrame.total_size);
+                            if (saveIRFrameCount > 0) {
+                                QString IRFileName;
+                                IRFileName = saveIRDir;
+                                struct tm* tm;
+                                time_t t = time(0);
+                                tm = localtime(&t);
+                                QTime millisecond;
+                                QTextStream(&IRFileName) << "/DepthVista_IR" << "_"<< TimeStamp << ".png";
+                                QByteArray name_temp = IRFileName.toLocal8Bit();
+                                std::string str = std::string(name_temp);
+                                char* file_name = (char*)str.c_str();
+                                cv::imwrite(file_name, IRImg_cpy);
+                                saveIRFrameCount--;
+                            }
+                            else {
+                                savingRaw = 0;
+                                saveIRFrame = false;
+                                saveIRFrame_start = false;
+                            }
+                        }
+				    }
                 }
 			}
         }
-
     }
-
 }
 
 void MainWindow::framesPerSecondDisplay()
 {
-	while (1)
-	{
+	while (1) {
 		if (!stopFlag)
             fps_label->setText("Current FPS:" + QString::number(GetFramesPerSecond()));
 		else
@@ -1242,11 +1192,11 @@ void MainWindow::framesPerSecondDisplay()
 }
 void MainWindow::callback(int a)
 {
-    if(!previewRenderThread.isRunning()){
+    if(!previewRenderThread.isRunning()) {
         previewRenderThread = QtConcurrent::run(this,&MainWindow::getFrame);
     }
 	
-	if(!fpsDisplayThread.isRunning()){
+	if(!fpsDisplayThread.isRunning()) {
 		fpsDisplayThread = QtConcurrent::run(this,&MainWindow::framesPerSecondDisplay);
     }
 }
@@ -1254,42 +1204,45 @@ void MainWindow::callback(int a)
 void MainWindow::notification_callback(int a)
 {
     CloseDevice();
-    fps_label->setText("Current FPS:" + QString::number(0));
     stopStream();
-    
-    yuvdisplay->setVisible(false);
-    depthdisplay->setVisible(false);
-    irdisplay->setVisible(false);
-    if (pcl_display_flag)
-        pclDisplay->setVisible(false);
+    onRGBDMapping_checkBox_stateChange(false);
+
+    emit tofSettingsDefault();
+    enumerateDevices();
     emit deviceRemoved();
+    fps_label->setText("Current FPS:0");
+
     calibParamObtained = false;
 	depthIntrinsicData = false;
 	rgbIntrinsicData = false;
 	extrinsicData = false;
+
+    yuvdisplay->setVisible(false);
+    depthdisplay->setVisible(false);
+    irdisplay->setVisible(false);
+    if (pcl_display_flag) {
+        pclDisplay->setVisible(false);
+    }
+
 	oldindex--;
 }
 
 
 void MainWindow::startStream()
 {
-    if (data_mode == Depth_IR_RGB_HD_Mode || data_mode == RGB_HD_Mode)
-    {
+    if (data_mode == Depth_IR_RGB_HD_Mode || data_mode == RGB_HD_Mode) {
         UYVY_frame.release();
         UYVY_frame = cv::Mat(PRE_RGB_HD_HEIGHT, PRE_RGB_HD_WIDTH, CV_8UC2);
     }
-    else if (data_mode == RGB_Full_HD_Mode)
-    {
+    else if (data_mode == RGB_Full_HD_Mode) {
         UYVY_frame.release();
         UYVY_frame = cv::Mat(PRE_RGB_FULL_HD_HEIGHT, PRE_RGB_FULL_HD_WIDTH, CV_8UC2);
     }
-    else if (data_mode == RGB_Original_Mode)
-    {
+    else if (data_mode == RGB_Original_Mode) {
         UYVY_frame.release();
         UYVY_frame = cv::Mat(PRE_RGB_ORIGINAL_HEIGHT, PRE_RGB_ORIGINAL_WIDTH, CV_8UC2);
     }
-    else if (data_mode == Depth_IR_RGB_VGA_Mode || data_mode == RGB_VGA_Mode)
-    {
+    else if (data_mode == Depth_IR_RGB_VGA_Mode || data_mode == RGB_VGA_Mode) {
         UYVY_frame.release();
         UYVY_frame = cv::Mat(PRE_RGB_VGA_HEIGHT, PRE_RGB_VGA_WIDTH, CV_8UC2);
     }
@@ -1301,10 +1254,10 @@ void MainWindow::stopStream()
     stopFlag = true;
     count = 0;
 
-    if(previewRenderThread.isRunning()){
+    if(previewRenderThread.isRunning()) {
         previewRenderThread.waitForFinished();
     }
-    if(savePLYThread.isRunning()){
+    if(savePLYThread.isRunning()) {
         savePLYThread.waitForFinished();
     }
 	if (!fpsDisplayThread.isRunning()) {
@@ -1313,25 +1266,23 @@ void MainWindow::stopStream()
     yuvdisplay->StopFrame();
     depthdisplay->StopFrame();
     irdisplay->StopFrame();
-
 }
 MainWindow::~MainWindow()
 {
     CloseDevice();
     stopStream();
-    if(yuvdisplay!=NULL){
+    if(yuvdisplay!=NULL) {
         delete yuvdisplay;
     }
 
-    if(irdisplay!=NULL){
+    if(irdisplay!=NULL) {
         delete irdisplay;
     }
 
-    if(depthdisplay!=NULL){
+    if(depthdisplay!=NULL) {
         delete depthdisplay;
     }
-    if (pcl_display_flag)
-    {
+    if (pcl_display_flag) {
         if (pclDisplay != NULL) {
             delete pclDisplay;
         }
@@ -1341,18 +1292,18 @@ MainWindow::~MainWindow()
 }
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if(watched==yuvdisplay && event->type() == QEvent::MouseButtonRelease){
+    if(watched==yuvdisplay && event->type() == QEvent::MouseButtonRelease) {
          QMouseEvent* mEvent = (QMouseEvent*)event;
          emit setMousePointer(mEvent->x(),mEvent->y(),TOF_HID_CID_AUTO_EXP_ROI);
     }
-    else if(watched == depthdisplay && event->type() == QEvent::MouseMove){
+    else if(watched == depthdisplay && event->type() == QEvent::MouseMove) {
         QMouseEvent* mEvent = (QMouseEvent*)event;
         emit setMousePointer(mEvent->x(),mEvent->y(),TOF_APP_CID_DEPTH_REGION);
     }
-    else if(watched == depthdisplay && event->type() == QEvent::MouseButtonRelease)
-    {
+    else if(watched == depthdisplay && event->type() == QEvent::MouseButtonRelease) {
         depth_mouse_clicked = !depth_mouse_clicked;
-    }else if(pcl_display_flag && watched == pclDisplay && event->type() == QEvent::MouseButtonDblClick){
+    }
+    else if(pcl_display_flag && watched == pclDisplay && event->type() == QEvent::MouseButtonDblClick) {
         onwidgetMaximized((QWidget*)pclDisplay);
     }
     return false;
@@ -1361,33 +1312,31 @@ void MainWindow::onwidgetMaximized(QWidget* widget)
 {
     int heightMaxi=0, widthMaxi=0;
 
-    if(!widgetMaximized){
+    if(!widgetMaximized) {
 
         widgetMaximized = true;
         modifyUi(DataMode::ModeUnknown);
         heightMaxi = windowheight * (1 - 0.13);
         widthMaxi = windowwidth * (1 - 0.15);
-        if(widget==yuvdisplay && (data_mode == RGB_HD_Mode ||data_mode == Depth_IR_RGB_HD_Mode )){
+        if(widget==yuvdisplay && (data_mode == RGB_HD_Mode ||data_mode == Depth_IR_RGB_HD_Mode )) {
             heightMaxi = widthMaxi /hd_aspect_ratio;
             widget->setMinimumSize(widthMaxi, heightMaxi);
         }
-        else if (widget == yuvdisplay && (data_mode == RGB_Full_HD_Mode))
-        {
+        else if (widget == yuvdisplay && (data_mode == RGB_Full_HD_Mode)) {
             heightMaxi = widthMaxi / full_hd_aspect_ratio;
             widget->setMinimumSize(widthMaxi, heightMaxi);
         }
-        else if (widget == yuvdisplay && (data_mode == RGB_Original_Mode))
-        {
+        else if (widget == yuvdisplay && (data_mode == RGB_Original_Mode)) {
             heightMaxi = widthMaxi / rgb_1200p_aspect_ratio;
             widget->setMinimumSize(widthMaxi, heightMaxi);
         }
-        else 
-		{
+        else {
             widthMaxi = heightMaxi *vga_aspect_ratio;
             widget->setMinimumSize(widthMaxi, heightMaxi);
         }
         widget->setVisible(true);
-    }else{
+    }
+    else {
         widgetMaximized = false;
         modifyUi(data_mode);
     }
@@ -1396,14 +1345,13 @@ void MainWindow::onwidgetMaximized(QWidget* widget)
 
 void MainWindow::onSetMousePointer(int x, int y, int ctrlID)
 {
-    if(ctrlID == TOF_HID_CID_AUTO_EXP_ROI){
-        if(SetAutoExposureROI(TOF_APP_VAL_MANUAL_ROI,yuvdisplay->size().width(),yuvdisplay->size().height(),x,y,auto_roi_win_size))
-        {
+    if(ctrlID == TOF_HID_CID_AUTO_EXP_ROI) {
+        if(SetAutoExposureROI(TOF_APP_VAL_MANUAL_ROI,yuvdisplay->size().width(),yuvdisplay->size().height(),x,y,auto_roi_win_size)) {
             pError("SetAutoExposureROI");
         }
 
-    }else if(ctrlID == TOF_APP_CID_DEPTH_REGION){
-        if(!depth_mouse_clicked){
+    }else if(ctrlID == TOF_APP_CID_DEPTH_REGION) {
+        if(!depth_mouse_clicked) {
 
             double outputXHigh = PRE_DEPTH_IR_WIDTH;
             double outputYHigh = PRE_DEPTH_IR_HEIGHT;
@@ -1414,17 +1362,17 @@ void MainWindow::onSetMousePointer(int x, int y, int ctrlID)
             double inputYHigh = depthdisplay->size().height()-1;
             double inputYCord = y;
             int outputYCord = (inputYCord / inputYHigh) * outputYHigh;
-            MousePtr pos;
+            DepthPtr pos;
             pos.X = outputXCord;
             pos.Y = outputYCord;
-            SetMousePos(pos);
+            SetDepthPos(pos);
         }
     }
 }
 void MainWindow::ongetDepthIRdata()
 {
     int avgDepth,stdDepth,avgIR,stdIR;
-    if(GetDepthIRValues(&avgDepth,&stdDepth,&avgIR,&stdIR)<0){
+    if(GetDepthIRValues(&avgDepth,&stdDepth,&avgIR,&stdIR)<0) {
         pError("GetDepthIRValues");
         return;
     }
@@ -1433,7 +1381,7 @@ void MainWindow::ongetDepthIRdata()
 
 void MainWindow::onSavePLYClicked(QString saveDir)
 {
-    if(!save_ply_flag){
+    if(!save_ply_flag) {
         savePLYfile_name =  saveDir;
         struct tm *tm;
         time_t t = time(0);
@@ -1471,22 +1419,21 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     ui->slide_menu_button->setIconSize(QSize(screen_width * 0.021, screen_height * 0.078));
 }
 
-void MainWindow::savingPLYFramesOver()
+void MainWindow::savingPLYFramesOver(int plySaveStatus)
 {
+    plySaveStatus==0 ? plyImageSaveStatus=1 : plyImageSaveStatus=0;
     saved_ply_flag = true;
 }
 
 void MainWindow::onPCLDisplay_checkBox_stateChange(bool state)
 {
 
-    if (state == false)
-    {
+    if (state == false) {
         pcl_display_flag_1 = false;
         modifyUi(DataMode::ModeUnknown);
         modifyUi(data_mode);
     }
-    else
-    {
+    else {
 		modifyUi(DataMode::ModeUnknown);
         modifyUi(data_mode);
         pclDisplay->setVisible(true);
@@ -1497,25 +1444,40 @@ void MainWindow::onPCLDisplay_checkBox_stateChange(bool state)
 
 void MainWindow::onRGBDMapping_checkBox_stateChange(int state)
 {
-	if (state)
-	{
-		if (depthIntrinsicData && rgbIntrinsicData && extrinsicData)
-		{
+	if (state) {
+		if (depthIntrinsicData && rgbIntrinsicData && extrinsicData) {
+            if (data_mode == DataMode::Depth_IR_RGB_VGA_Mode) {
+                pclDisplay->get3DIntrinsic(rgb_intrinsic.at<double>(0, 0), rgb_intrinsic.at<double>(1, 1),
+                    rgb_intrinsic.at<double>(0, 2), rgb_intrinsic.at<double>(1, 2));
+            }
+            else if (data_mode == DataMode::Depth_IR_RGB_HD_Mode) {
+                pclDisplay->get3DIntrinsic(LENS_FOCUS_POINT_HD_X, LENS_FOCUS_POINT_HD_Y,
+                    LENS_PRINCIPLE_AXIS_HD_X, LENS_PRINCIPLE_AXIS_HD_Y);
+            }
+			SetRGBDMapping(state);
 			rgbDMapping_flag = state;
 		}
 	}
-	else
-	{
-		rgbDMapping_flag = state;
+	else {	
+        if (depthIntrinsicData && rgbIntrinsicData && extrinsicData) {
+            if (data_mode == DataMode::Depth_IR_RGB_VGA_Mode) {
+                pclDisplay->get3DIntrinsic(depth_intrinsic.at<double>(0, 0), depth_intrinsic.at<double>(1, 1),
+                    depth_intrinsic.at<double>(0, 2), depth_intrinsic.at<double>(1, 2));
+            }
+            else if (data_mode == DataMode::Depth_IR_RGB_HD_Mode) {
+                pclDisplay->get3DIntrinsic(depth_intrinsic.at<double>(0, 0), depth_intrinsic.at<double>(1, 1),
+                    depth_intrinsic.at<double>(0, 2), depth_intrinsic.at<double>(1, 2));
+            }
+            SetRGBDMapping(state);
+            rgbDMapping_flag = state;
+        }
 	}
-
 }
 
 
 void MainWindow::onUndistort_checkBox_stateChange(int state)
 {
-	if (SetUnDistortion(state) < 0)
-	{
+	if (SetUnDistortion(state) < 0) {
 		perror("Calibration parameters Not Found");
 	}
 
@@ -1523,33 +1485,40 @@ void MainWindow::onUndistort_checkBox_stateChange(int state)
 
 void MainWindow::onStartSavingFrames(bool depth, bool ir, bool rgb, bool rawDepth, bool PLY,  QString save_frame_dir)
 {
-
-
-    if (data_mode != IR_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
-
-        if (savePLY = PLY)
-            savePLYFrameCount = 1;
-        if (saveRawFrame = rawDepth)
-            saveRawFrameCount = 1;
-        if (saveDepthFrame = depth)
-            saveDepthFrameCount = 1;
+    if(!QDir(save_frame_dir).exists()) {
+        QMessageBox msgBox;
+        msgBox.setText("Path does not exist");
+        msgBox.setIcon(QMessageBox::Warning);
+        int result = msgBox.exec();
+        if(result == QMessageBox::Ok) {
+            msgBox.close();
+        }
     }
-    if (data_mode >= Depth_IR_RGB_VGA_Mode) {
-        if (saveRGBFrame = rgb)
-            saveRGBFrameCount = 1;
-    }
-    if (data_mode != Depth_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
-        if (saveIRFrame = ir)
-            saveIRFrameCount = 1;
-    }
-    saveRGBDir = save_frame_dir;
-    saveIRDir = save_frame_dir;
-    saveDepthDir = save_frame_dir;
-    save3dDir = save_frame_dir;
-    saveRAWDir = save_frame_dir;
-    if(depth || ir || rgb || rawDepth || PLY)
-        startedSavingFrames = true;
-    else
-        return;
+    else {
+        if(depth || ir || rgb || rawDepth || PLY)
+            startedSavingFrames = true;
 
+        if (data_mode != IR_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
+
+            if (savePLY = PLY)
+                savePLYFrameCount = 1;
+            if (saveRawFrame = rawDepth)
+                saveRawFrameCount = 1;
+            if (saveDepthFrame = depth)
+                saveDepthFrameCount = 1;
+        }
+        if (data_mode >= Depth_IR_RGB_VGA_Mode) {
+            if (saveRGBFrame = rgb)
+                saveRGBFrameCount = 1;
+        }
+        if (data_mode != Depth_Mode && data_mode <= Depth_IR_RGB_HD_Mode) {
+            if (saveIRFrame = ir)
+                saveIRFrameCount = 1;
+        }
+        saveRGBDir = save_frame_dir;
+        saveIRDir = save_frame_dir;
+        saveDepthDir = save_frame_dir;
+        save3dDir = save_frame_dir;
+        saveRAWDir = save_frame_dir;
+    }
 }

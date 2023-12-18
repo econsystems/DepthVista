@@ -13,10 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Widgets Concurrent OpenGL Core Gui REQUIRED)
 
-find_package(PCL 1.8.0 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+find_package(OpenCV REQUIRED)
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -37,11 +34,9 @@ add_executable(DepthVista
   images.qrc
 )
 
-
+target_include_directories(DepthVista PRIVATE ${TOF_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Qt5_INCLUDE_DIRS})
 if(UNIX)
-    target_link_libraries(DepthVista PRIVATE ${PCL_LIBRARIES} /usr/lib/libopencv_world.so.4.2.0 Qt5::Widgets Qt5::OpenGL Qt5::Gui Qt5::Core DepthVistaSDK)
-    target_include_directories(DepthVista PRIVATE /usr/local/include/DepthVistaSDK ${Qt5_INCLUDE_DIRS})
+    target_link_libraries(DepthVista PRIVATE ${OpenCV_LIBRARIES} Qt5::Widgets Qt5::OpenGL Qt5::Gui Qt5::Core DepthVistaSDK)
 else()
-    target_include_directories(DepthVista PRIVATE ${Qt5_INCLUDE_DIRS})
-    target_link_libraries(DepthVista PRIVATE ${PCL_LIBRARIES} Qt5::Widgets Qt5::OpenGL Qt5::Gui Qt5::Core)
+    target_link_libraries(DepthVista PRIVATE ${OpenCV_LIBRARIES} Qt5::Widgets Qt5::OpenGL Qt5::Gui Qt5::Core)
 endif()

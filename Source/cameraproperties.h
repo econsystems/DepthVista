@@ -63,7 +63,7 @@ typedef enum {
 }CameraProp;
 
 #define TOF_APP_VAL_FAR_SPC_DEPTH_MIN 1000
-#define TOF_APP_VAL_FAR_SPC_DEPTH_MAX 6500
+#define TOF_APP_VAL_FAR_SPC_DEPTH_MAX 6000
 #define TOF_APP_VAL_NEAR_SPC_DEPTH_MIN 200
 #define TOF_APP_VAL_NEAR_SPC_DEPTH_MAX 1200
 
@@ -114,6 +114,7 @@ class Cameraproperties : public QWidget
     Q_OBJECT
 
 public:
+    QStringList devicelist;
     explicit Cameraproperties(QWidget *parent = nullptr,int index = -1);
     ~Cameraproperties();
 signals:
@@ -146,7 +147,9 @@ public slots:
     Q_SLOT void changeFontSize();
 
     Q_SLOT void onFrameSaveClicked();
+    Q_SLOT void enableAndDisableSaveButton();
     Q_SLOT void onSavingFramesComplete();
+    Q_SLOT void onOthersavedoneplyfail();
     Q_SLOT void onTofCamModeSelected(bool ir_mode);
     Q_SLOT void onDualCamModeSelected(bool vgaMode);
     Q_SLOT void onRgbCamModeSelected();
@@ -155,21 +158,26 @@ public slots:
     Q_SLOT void onUniqueIDRead(uint64_t uniqueID);
 	Q_SLOT void RGBDMapping_checkBox_stateChange(int state);
 	Q_SLOT void RGBDMapping_enable(bool state);
-
+    Q_SLOT void ontofSettingsDefault();
 
 private:
     Ui::Cameraproperties *ui;
     QWidget *parent_widget;
     QClipboard *clipboard = QGuiApplication::clipboard();
     int oldindex = 0;
-    QString save_img_dir;
+    QString save_img_dir, current_save_img_dir;
     void connectCamPropSlots();
     bool camPropSlotsConnected = false;
     bool threeDRendering = false;
-	DataMode cDataMode;
+    DataMode cDataMode;
+    int dataModeCurrentIndex, depthRangeCurrentIndex;
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 
+private slots:
+    void on_DatamodeApplyButton_clicked();
+    void on_RangeApplyButton_clicked();
 };
 
 #endif // CAMERAPROPERTIES_H

@@ -30,13 +30,13 @@ typedef struct
 	int default_val;
 }UVCProp;
 /**
- * @brief Specifies the X and Y coordinates of the mousePtr.
+ * @brief Specifies the X and Y coordinates of the DepthPtr.
  */
 typedef struct
 {
 	int X;
 	int Y;
-}MousePtr;
+}DepthPtr;
 
 typedef struct
 {

@@ -153,26 +153,21 @@ DEPTHVISTA_EXPORT Result GetIMUConfig(IMUCONFIG_TypeDef* lIMUConfig);
 * @return 		::Ok		if the function succeeded, or one of the error values defined by ::Result.
 */
 DEPTHVISTA_EXPORT Result ControlIMUCapture(IMUDATAINPUT_TypeDef* lIMUInput);
-
 /**
 * @brief 		Gets the IMU axis data from the device.
-* @param	 	lIMUDataReadyEvent			Event to be passed to API and will be updated for each value.
-* @param[out] 	lIMUAxes			pointer to IMUDATAOUTPUT_TypeDef structure.
+* @param[out] 	lIMUAxes	pointer to IMUDATAOUTPUT_TypeDef structure.
 * @return 		::Ok		if the function succeeded, or one of the error values defined by ::Result.
 */
-
 #ifdef  __linux__
-DEPTHVISTA_EXPORT Result GetIMUValue(pthread_mutex_t *lIMUDataReadyEvent, IMUDATAOUTPUT_TypeDef *lIMUAxes);
+DEPTHVISTA_EXPORT Result GetIMUValue(IMUDATAOUTPUT_TypeDef *lIMUAxes);
 #elif _WIN32
 /**
 * @brief 		Gets the IMU axis data from the device.
-* @param	 	lIMUDataReadyEvent			Event to be passed to API and will be updated for each value.
-* @param[out] 	lIMUAxes			pointer to IMUDATAOUTPUT_TypeDef structure.
+* @param[out] 	lIMUAxes	pointer to IMUDATAOUTPUT_TypeDef structure.
 * @return 		::Ok		if the function succeeded, or one of the error values defined by ::Result.
 */
-DEPTHVISTA_EXPORT Result GetIMUValue(HANDLE lIMUDataReadyEvent, IMUDATAOUTPUT_TypeDef* lIMUAxes);
+DEPTHVISTA_EXPORT Result GetIMUValue(IMUDATAOUTPUT_TypeDef* lIMUAxes);
 #endif
-
 /**
 * @brief 		Returns the Anti Flicker detection Mode from the device.
 * @param[out] 	gAFDetect			Pointer to a 8-bit unsigned integer variable in which to store the Anti Flicker detection Mode.
@@ -351,7 +346,7 @@ DEPTHVISTA_EXPORT Result SetFilterType(int ctrlID, bool selected);
 * @return 		::Ok		if the function succeeded, or one of the error values defined by ::Result.
 *
 */
-DEPTHVISTA_EXPORT Result SetMousePos(MousePtr pos);
+DEPTHVISTA_EXPORT Result SetDepthPos(DepthPtr pos);
 /**
 * @brief  		Sets the cursor color to the white or black.
 * @param[in] 	color The color value which needs to be set.
@@ -367,6 +362,13 @@ DEPTHVISTA_EXPORT Result SetCursorColor(int color);
 */
 DEPTHVISTA_EXPORT Result SetUnDistortion(int undistort);
 
+/**
+* @brief  		Enables or Disables rgbDMapping.
+* @param[in] 	rgbDMapping - The value which determine whether it enables or disables.
+* @return 		::Ok		if the function succeeded, or one of the error values defined by ::Result.
+*
+*/
+DEPTHVISTA_EXPORT Result SetRGBDMapping(int rgbDMapping);
 /**
 * @brief  		Enables or Disables planarization.
 * @param[in] 	planarize The value which determine whether it enables or disables.
@@ -478,11 +480,5 @@ DEPTHVISTA_EXPORT Result CalibReadReqExtrinsic(int* lExtFileLength);
 *
 */
 DEPTHVISTA_EXPORT Result CalibReadExtrinsic(int* lExtFileLength, unsigned char* ExtrinsicBuffer);
-
-/**
-* @brief 		Calls sleep for 10 milliseconds.
-*/
-DEPTHVISTA_EXPORT void SleepMilliSec();
-
 
 #endif	/* DEPTHVISTA_H */

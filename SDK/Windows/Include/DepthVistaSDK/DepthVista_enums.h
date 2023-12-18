@@ -79,13 +79,14 @@ typedef enum {
     InvalidBuffer = -18,		//!< Frame from the camera is invalid.
     InvalidHidHandle = -19,
     RGB_DCalibNotFound = -20,   //!< RGB-D Calibration Data not found in the device
+    FrameSeparationFailed = -21, //!< Frame separation logic failed
 	Others = -255,				//!< An unknown error occurred.
 }Result;
 
 
 typedef enum {
 	Center = 0,					//!< To get the average depth and ir value at center region of the image.
-	MouseLivePtr = 1,			//!< To get the average depth and ir value at region around the mouse pointer.
+    CustomPtr = 1,			//!< To get the average depth and ir value at region around the mouse pointer.
 }AvgRegion;
 
 typedef enum {
@@ -107,10 +108,5 @@ typedef enum {
 	PIX_FMT_Y16,
 	PIX_FMT_RGB,
 }PixFormat;
-
-typedef enum {
-	Long_Run_Prepare = 0,
-	Long_Run_start = 1,
-}LongRunFlag;
 
 #endif	/* DEPTHVISTA_ENUMS_H */

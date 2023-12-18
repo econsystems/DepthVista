@@ -20,7 +20,7 @@ class OpenGLDisplay : public QOpenGLWidget, public QOpenGLFunctions
 public:
     explicit OpenGLDisplay(QWidget* parent = nullptr,Pixelformat pixformat = UYVY);
     ~OpenGLDisplay();
-    QMutex renderMutex; // mutex to use in rendering
+    QMutex renderMutex;
     bool gotFrame;
     Pixelformat pixelformat;
     void InitDrawBuffer(unsigned bsize);
@@ -54,8 +54,6 @@ private:
     unsigned char *srcBuffer;
     uint8_t *pfmb;
 };
-
-/***********************************************************************/
 
 class OpenGlException: public QException
 {

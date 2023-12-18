@@ -3,7 +3,7 @@
 
 DepthVista Viewer is an Qt based UI Application which preview and control all the camera settings of the  See3CAM_TOF_25_CUG device. 
 
-## Supported Platformas:
+## Supported Platforms:
 
 * Windows 8.1 , 10 , 11
 * Ubuntu 18.04 , 20.04 (64 bit )
@@ -23,6 +23,7 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 	* Temporal Filter
 	* Edge Detection
 	* Spatial Filter
+	* Undistort Depth
 * Capture Frames
 * Color Camera Settings 
 * Unique ID
@@ -53,6 +54,7 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 ## Release
 
 * DepthVista v1.0.0.4		-	10-Nov-2022
+* DepthVista v1.0.0.6		-	15-Dec-2023
 
 ## Support
 

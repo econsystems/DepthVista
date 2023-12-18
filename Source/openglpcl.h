@@ -1,6 +1,7 @@
 #ifndef OpenGLPCL_H
 #define OpenGLPCL_H
 
+#include <fstream>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QScopedPointer>
@@ -15,8 +16,9 @@
 #include <QMatrix4x4>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
-#include "pcl/io/ply_io.h"
-
+#ifdef __linux__
+        #include <unistd.h>
+#endif
 
 using namespace std;
 using namespace cv;
@@ -50,7 +52,7 @@ class OpenGLPCL : public QOpenGLWidget, public QOpenGLFunctions
 public:
     explicit OpenGLPCL(QWidget* parent = nullptr,PixelformatPCL pixformat = UYVY_PCL);
     ~OpenGLPCL();
-    QMutex							renderMutex; // mutex to use in rendering
+    QMutex							renderMutex;
     bool							gotFrame;
     double							alpha, beta;
     uint16_t						colorMap;
@@ -67,12 +69,17 @@ public:
 	uint32_t						currentWidth;
 	uint32_t						currentHeight;
     bool                            savePLYSpecificRange = false;
+	float focalLengthx, focalLengthy, principlePointx, principlePointy;
+	float hdFocalLengthx, hdFocalLengthy, hdPrinciplePointx, hdPrinciplePointy;
+
     void setSavePLYfile(QString file_name, bool save_specific_range, uint16_t depth_min_val, uint16_t depth_max_val);
     void InitDrawBuffer(unsigned bsize);
     void DisplayVideoFrame(unsigned char *depth_data, unsigned char* rgb_data, int frameWidth, int frameHeight);
     void StopFrame();
-    void getColorMapProp(uint16_t depthmin, uint16_t depthMax, uint16_t colormap);
+    void getColorMapProp(uint16_t depthmin, uint16_t depthMax, uint16_t colormap, uint16_t depthRange);
+	void get3DIntrinsic(double fx, double fy, double cx, double cy);
 
+	uint16_t						currentDepthRange;
     cv::Mat							DepthImg;
     cv::Mat							PrevDepthFrame;
     cv::Mat							Depthcolormap;
@@ -80,14 +87,11 @@ public:
     QMatrix4x4						ViewMatrix;
     QMatrix4x4						ProjectionMatrix;
     QMatrix4x4						cameraMatrix;
-    // Initial position : on +Z
     QVector3D						position;
     QPoint							lastMousePos;
     float							horizontalAngle;
     float							verticalAngle;
-    // Initial Field of View
     float							initialFoV;
-    //Initial camera position
     bool							initialPos;
 
     QOpenGLVertexArrayObject		vao;
@@ -98,6 +102,7 @@ public:
     void setInitialPos();
 	void dataModeChanged(uint8_t dataMode);
     void paintGL() override;
+    std::vector<color_point_t> points;
 
 protected:
     void initializeGL() override;
@@ -109,7 +114,7 @@ protected:
 signals:
     Q_SIGNAL void maximized(QWidget* widget);
     Q_SIGNAL void renderframe();
-    Q_SIGNAL void ply_file_save();
+    Q_SIGNAL void ply_file_save(int);
 public slots:
     Q_SLOT void updateFrame();
 
@@ -131,11 +136,8 @@ private:
     void                            saveplyFile();
     bool                            save_cloud_ready = false;
     bool                            ply_thread_running = false;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr save_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 };
-
-/***********************************************************************/
 
 class OpenGlExceptionPCL: public QException
 {

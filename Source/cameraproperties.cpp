@@ -51,7 +51,7 @@ Cameraproperties::Cameraproperties(QWidget *parent, int index) :
         depth_range_label_Font.setPointSize(11);
     }
 
-
+    ui->FrameSavePushButton->setEnabled(false);
     ui->data_mode_label->setFont(tabWidgetFont);
     ui->depth_range_label->setFont(depth_range_label_Font);
     ui->device_list_cmb->setFont(device_list_cmb_Font);
@@ -76,9 +76,26 @@ Cameraproperties::Cameraproperties(QWidget *parent, int index) :
     connect(parent_widget,SIGNAL(uvcpropQueried(std::vector< UVCProp >)),this,SLOT(onUvcPropQueried(std::vector< UVCProp>)));
     connect(parent_widget,SIGNAL(updateData(int,int,int,int)),this,SLOT(onUpdateData(int,int,int,int)));
     connect(this,SIGNAL(getDepthIRdata()),parent_widget,SLOT(ongetDepthIRdata()));
-//    save_img_dir = QStandardPaths::standardLocations(QStandardPaths::/*PicturesLocation*/HomeLocation).first();
-    save_img_dir = QDir::currentPath();
-//    qDebug() << "QDir::homePath : " <<QDir::currentPath()<< "\n";
+    if(QSysInfo::productType() == "windows")
+    {
+        if(!QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista").exists()) {
+            QDir().mkdir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista");
+        }
+        if(!QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista/Pictures").exists()) {
+            QDir().mkdir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista/Pictures");
+        }
+        save_img_dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista/Pictures";
+    }
+    else
+    {
+        if(!QDir("Pictures").exists()) {
+            QDir().mkdir("Pictures");
+        }
+        if(QDir("Pictures").exists()) {
+            QDir dir(QCoreApplication::applicationDirPath());
+            save_img_dir = dir.absoluteFilePath("Pictures");
+        }
+    }
     ui->save_image_location->setText(save_img_dir);
     connect(ui->open_folder_btn,SIGNAL(clicked()),this,SLOT(onOpenFolder()));
 
@@ -89,6 +106,7 @@ Cameraproperties::Cameraproperties(QWidget *parent, int index) :
     connect(ui->FrameSavePushButton, SIGNAL(clicked()), this, SLOT(onFrameSaveClicked()));
     connect(this, SIGNAL(startSavingFrames(bool, bool, bool, bool, bool, QString)), parent_widget, SLOT(onStartSavingFrames(bool, bool, bool, bool, bool, QString)));
     connect(parent_widget, SIGNAL(savingFramesComplete()), this, SLOT(onSavingFramesComplete()));
+    connect(parent_widget, SIGNAL(othersavedoneplyfail()), this, SLOT(onOthersavedoneplyfail()));
     connect(parent_widget, SIGNAL(tofCamModeSelected(bool)), this, SLOT(onTofCamModeSelected(bool)));
     connect(parent_widget, SIGNAL(dualCamModeSelected(bool)), this, SLOT(onDualCamModeSelected(bool)));
     connect(parent_widget, SIGNAL(rgbCamModeSelected()), this, SLOT(onRgbCamModeSelected()));
@@ -100,18 +118,59 @@ Cameraproperties::Cameraproperties(QWidget *parent, int index) :
     connect(ui->undistortChkBx, SIGNAL(stateChanged(int)), parent_widget, SLOT(onUndistort_checkBox_stateChange(int)));
     connect(parent_widget, SIGNAL(firmwareVersionRead(uint8_t, uint8_t, uint16_t, uint16_t)), this, SLOT(onFirmwareVersionRead(uint8_t, uint8_t, uint16_t, uint16_t)));
     connect(parent_widget, SIGNAL(uniqueIDRead(uint64_t)), this, SLOT(onUniqueIDRead(uint64_t)));
+    connect(parent_widget, SIGNAL(tofSettingsDefault()), this, SLOT(ontofSettingsDefault()));
+    connect(ui->DepthRawSaveCheckBox, SIGNAL(stateChanged(int)), this, SLOT(enableAndDisableSaveButton()));
+    connect(ui->DepthSaveCheckBox, SIGNAL(stateChanged(int)), this, SLOT(enableAndDisableSaveButton()));
+    connect(ui->IRSaveCheckBox, SIGNAL(stateChanged(int)), this, SLOT(enableAndDisableSaveButton()));
+    connect(ui->PLYSaveCheckBox, SIGNAL(stateChanged(int)), this, SLOT(enableAndDisableSaveButton()));
+    connect(ui->RGBSaveCheckBox, SIGNAL(stateChanged(int)), this, SLOT(enableAndDisableSaveButton()));
+}
+
+void Cameraproperties::ontofSettingsDefault()
+{
+    ui->tof_coring_spinBox->setValue(150);
+    ui->tof_gain_slider->setValue(16);
+    ui->data_mode_cmb->setCurrentIndex(3);
+    ui->depth_range_cmb->setCurrentIndex(1);
+    ui->rgbDCheckBox->setChecked(false);
+    ui->depth_planarize_chkb->setChecked(false);
+    ui->edge_chkBox->setChecked(false);
+    ui->spatial_chkBox->setChecked(false);
+    ui->temporal_chkBox->setChecked(false);
+    ui->undistortChkBx->setChecked(false);
+    ui->avg_depth_ir_grpbox->setChecked(false);
+    ui->IR_display_checkBox->setChecked(false);
+
+    disconnect(this, SIGNAL(setFilterType(int, bool)), parent_widget, SLOT(onSetFilterType(int, bool)));
+    disconnect(this, SIGNAL(setCamProperty(int, int)), parent_widget, SLOT(onSetCamProperty(int, int)));
+    disconnect(this, SIGNAL(setCamProperty(int, int, int, int)), parent_widget, SLOT(onSetCamProperty(int, int, int, int)));
+
+    ui->center_btn->setChecked(true);
+    ui->mouse_ptr_btn->setChecked(false);
+
+    connect(this,SIGNAL(setFilterType(int, bool)),parent_widget,SLOT(onSetFilterType(int, bool)));
+    connect(this,SIGNAL(setCamProperty(int,int)),parent_widget,SLOT(onSetCamProperty(int,int)));
+    connect(this,SIGNAL(setCamProperty(int,int,int,int)),parent_widget,SLOT(onSetCamProperty(int,int,int,int)));
+
+    ui->cursor_black_btn->setChecked(false);
+    ui->cursor_white_btn->setChecked(true);
+    ui->DepthRawSaveCheckBox->setChecked(false);
+    ui->DepthSaveCheckBox->setChecked(false);
+    ui->IRSaveCheckBox->setChecked(false);
+    ui->PLYSaveCheckBox->setChecked(false);
+    ui->RGBSaveCheckBox->setChecked(false);
 }
 
 void Cameraproperties::onDeviceEnumerated(QStringList devices)
 {
+    devicelist = devices;
     disconnect(ui->device_list_cmb,SIGNAL(currentIndexChanged(int)), this, SLOT(deviceChanged(int)));
     ui->device_list_cmb->clear();
     ui->device_list_cmb->addItems(devices);
     ui->device_list_cmb->setCurrentIndex(oldindex);
-    connect(ui->device_list_cmb, SIGNAL(currentIndexChanged(int)), this,
-                                SLOT(deviceChanged(int)));
-
+    connect(ui->device_list_cmb, SIGNAL(currentIndexChanged(int)), this, SLOT(deviceChanged(int)));
 }
+
 void Cameraproperties::changeFontSize()
 {
     QScreen* screen = QGuiApplication::primaryScreen();
@@ -169,7 +228,6 @@ void Cameraproperties::changeFontSize()
 }
 void Cameraproperties::onUvcPropQueried(std::vector< UVCProp > uvc_prop)
 {
-
     disconnect(this, SIGNAL(setFilterType(int, bool)), parent_widget, SLOT(onSetFilterType(int, bool)));
     disconnect(this, SIGNAL(setCamProperty(int, int)), parent_widget, SLOT(onSetCamProperty(int, int)));
     disconnect(this, SIGNAL(setCamProperty(int, int, int, int)), parent_widget, SLOT(onSetCamProperty(int, int, int, int)));
@@ -235,6 +293,16 @@ void Cameraproperties::onUvcPropQueried(std::vector< UVCProp > uvc_prop)
                 break;
             case TOF_UVC_CID_EXPOSURE_AUTO:
                 ui->expo_auto_btn->setChecked(!(bool)uvc_prop[i].cur);
+                if(ui->expo_auto_btn->isChecked())
+                {
+                    ui->gain_label->setEnabled(false);
+                    ui->gain_slider->setEnabled(false);
+                }
+                else
+                {
+                    ui->gain_label->setEnabled(true);
+                    ui->gain_slider->setEnabled(true);
+                }
                 break;
             case TOF_UVC_CID_EXPSOURE_ABS:
                 ui->exposure_slider->setEnabled(!ui->expo_auto_btn->isChecked());
@@ -260,12 +328,20 @@ void Cameraproperties::onDepthModeChanged(std::vector< std::pair <int, int> > ca
 
         case TOF_UVC_EXT_CID_DEPTH_RANGE:
             if (value) {
-                ui->spc_depth_min_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN, TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
-                ui->spc_depth_max_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN, TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                ui->spc_depth_min_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
             }
             else {
-                ui->spc_depth_min_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN, TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
-                ui->spc_depth_max_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN, TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                ui->spc_depth_min_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
             }
             break;
         case TOF_UVC_EXT_CID_CORING:
@@ -277,13 +353,10 @@ void Cameraproperties::onDepthModeChanged(std::vector< std::pair <int, int> > ca
             break;
         case TOF_APP_MIN_DEPTH:
             ui->min_depth_val->setText(QStringLiteral("%1 mm").arg(value));
-            ui->spc_depth_min_value->setMinimum(value);
-            ui->spc_depth_max_value->setMinimum(value);
             break;
         case TOF_APP_MAX_DEPTH:
             ui->max_depth_val->setText(QStringLiteral("%1 mm").arg(value));
-            ui->spc_depth_max_value->setMaximum(value);
-            ui->spc_depth_min_value->setMaximum(value);
+            break;
         }
     }
     ui->avg_depth_ir_btn_grp->setId(ui->center_btn, TOF_APP_VAL_AVG_DEPTH_CENTER);
@@ -292,7 +365,6 @@ void Cameraproperties::onDepthModeChanged(std::vector< std::pair <int, int> > ca
     ui->cursor_color_btn_grp->setId(ui->cursor_black_btn, TOF_APP_VAL_BLACK_CURSOR);
     ui->clipboard_btn_grp->setId(ui->clear_clipboard_btn, TOF_APP_VAL_CLR_CLIPBOARD);
     ui->clipboard_btn_grp->setId(ui->copy_clipboard_btn, TOF_APP_VAL_CPY_CLIPBOARD);
-
 }
 
 void Cameraproperties::onCamPropQueried(std::vector< std::pair <int,int> > camera_prop)
@@ -307,22 +379,52 @@ void Cameraproperties::onCamPropQueried(std::vector< std::pair <int,int> > camer
         switch (ctrl_id) {
             
             case TOF_UVC_EXT_CID_DATA_MODE:
-				cDataMode = (DataMode)value;
-
-            value = (value == 0) ? value : value - 1;
-            ui->data_mode_cmb->setCurrentIndex(value);
-            break;
+                cDataMode = (DataMode)value;
+                value = (value == 0) ? value : value - 1;
+                ui->data_mode_cmb->setCurrentIndex(value);
+                dataModeCurrentIndex = ui->data_mode_cmb->currentIndex();
+                if (cDataMode == DataMode::IR_Mode) {
+                    ui->postProcessingGrpBox->setEnabled(false);
+                    ui->postProcessingGrpBox->setChecked(false);
+                    ui->tof_coring_label->setEnabled(false);
+                    ui->tof_coring_spinBox->setEnabled(false);
+                    ui->avg_depth_ir_grpbox->setEnabled(false);
+                    ui->spc_depth_grp_box->setEnabled(false);
+                    ui->spc_depth_grp_box->setChecked(false);
+                    ui->tof_gain_label->setEnabled(true);
+                    ui->tof_gain_slider->setEnabled(true);
+                    ui->cur_tof_gain_value->setEnabled(true);
+                }
+                if(cDataMode == DataMode::RGB_Full_HD_Mode || cDataMode == DataMode::RGB_Original_Mode)
+                {
+                    ui->cur_fps_ctrl_value->setMaximum(30);
+                }
+                if(cDataMode == DataMode::RGB_HD_Mode || cDataMode == DataMode::RGB_VGA_Mode)
+                {
+                    ui->cur_fps_ctrl_value->setMaximum(60);
+                }
+                break;
 
             case TOF_UVC_EXT_CID_DEPTH_RANGE:
-            ui->depth_range_cmb->setCurrentIndex(value);
-            if(value){
-                ui->spc_depth_min_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN,TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
-                ui->spc_depth_max_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN,TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
-            }else{
-                ui->spc_depth_min_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN,TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
-                ui->spc_depth_max_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN,TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
-            }
-            break;
+                ui->depth_range_cmb->setCurrentIndex(value);
+                if (value) {
+                    ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                    ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                    ui->spc_depth_min_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                }
+                else {
+                    ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                    ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                    ui->spc_depth_min_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                }
+                depthRangeCurrentIndex = ui->depth_range_cmb->currentIndex();
+                break;
             case TOF_UVC_EXT_CID_CORING:
             ui->tof_coring_spinBox->setValue(value);
             break;
@@ -414,14 +516,10 @@ void Cameraproperties::onCamPropQueried(std::vector< std::pair <int,int> > camer
             break;
             case TOF_APP_MIN_DEPTH:
                 ui->min_depth_val->setText(QStringLiteral("%1 mm").arg(value));
-                ui->spc_depth_min_value->setMinimum(value);
-                ui->spc_depth_max_value->setMinimum(value);
                 break;
             case TOF_APP_MAX_DEPTH:
                 ui->max_depth_val->setText(QStringLiteral("%1 mm").arg(value));
-                ui->spc_depth_max_value->setMaximum(value);
-                ui->spc_depth_min_value->setMaximum(value);
-
+                break;
         }
     }
     ui->avg_depth_ir_btn_grp->setId(ui->center_btn,TOF_APP_VAL_AVG_DEPTH_CENTER);
@@ -452,8 +550,6 @@ void Cameraproperties::connectCamPropSlots()
     connect(ui->denoise_slider,&QAbstractSlider::valueChanged,std::bind(static_cast<void(Cameraproperties::*)(int,int,QLabel*)>(&Cameraproperties::onCamPropChanged),this,TOF_HID_CID_DENOISE,std::placeholders::_1,ui->cur_denoise_value));
     connect(ui->tof_gain_slider,&QAbstractSlider::valueChanged,std::bind(static_cast<void(Cameraproperties::*)(int,int,QLabel*)>(&Cameraproperties::onCamPropChanged),this,TOF_UVC_EXT_CID_IR_GAIN,std::placeholders::_1,ui->cur_tof_gain_value));
 
-    connect(ui->data_mode_cmb,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),std::bind(static_cast<void(Cameraproperties::*)(int,int)>(&Cameraproperties::onCamPropChanged),this,TOF_UVC_EXT_CID_DATA_MODE,std::placeholders::_1));
-    connect(ui->depth_range_cmb,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),std::bind(static_cast<void(Cameraproperties::*)(int,int)>(&Cameraproperties::onCamPropChanged),this,TOF_UVC_EXT_CID_DEPTH_RANGE,std::placeholders::_1));
     connect(ui->pwr_line_freq_cmb,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),std::bind(static_cast<void(Cameraproperties::*)(int,int)>(&Cameraproperties::onCamPropChanged),this,TOF_UVC_CID_PWR_LINE_FREQ,std::placeholders::_1));
     connect(ui->anti_flicker_cmb,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),std::bind(static_cast<void(Cameraproperties::*)(int,int)>(&Cameraproperties::onCamPropChanged),this,TOF_HID_CID_ANTI_FLICKER_DETECTION,std::placeholders::_1));
     connect(ui->special_effect_cmb,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),std::bind(static_cast<void(Cameraproperties::*)(int,int)>(&Cameraproperties::onCamPropChanged),this,TOF_HID_CID_SPECIAL_EFFECT,std::placeholders::_1));
@@ -515,7 +611,9 @@ void Cameraproperties::onGrpButtonchanged(int ctrlID, int id, bool checked)
                 ui->face_overlay_chkb->setEnabled(true);
             }else{
                 ui->face_status_chkb->setEnabled(false);
+                ui->face_status_chkb->setCheckState(Qt::Unchecked);
                 ui->face_overlay_chkb->setEnabled(false);
+                ui->face_overlay_chkb->setCheckState(Qt::Unchecked);
             }
             emit setCamProperty(ctrlID,id,ui->face_status_chkb->isChecked(),ui->face_overlay_chkb->isChecked());
 			break;
@@ -532,7 +630,19 @@ void Cameraproperties::onGrpButtonchanged(int ctrlID, int id, bool checked)
 			emit setCamProperty(ctrlID, id);
 			break;
         case TOF_APP_CID_SPC_DEPTH_RANGE:
-            emit setCamProperty(ctrlID,id,ui->spc_depth_min_value->value(),ui->spc_depth_max_value->value());
+            if(ui->spc_depth_min_value->value() >= ui->spc_depth_max_value->value()) {
+                if(ui->depth_range_cmb->currentIndex() == 1) {
+                    ui->spc_depth_min_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+                }
+                else {
+                    ui->spc_depth_min_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                    ui->spc_depth_max_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+                }
+            }
+            else {
+                emit setCamProperty(ctrlID,id,ui->spc_depth_min_value->value(),ui->spc_depth_max_value->value());
+            }
             break;
         case TOF_APP_CID_DEPTH_REGION:
         case TOF_APP_CID_CURSOR_COLOR:
@@ -578,7 +688,19 @@ void Cameraproperties::onCamPropChanged(int ctrlID,int value)
     switch (ctrlID) {
 
     case TOF_APP_CID_SPC_DEPTH_RANGE:
-        emit setCamProperty(ctrlID,value,ui->spc_depth_min_value->value(),ui->spc_depth_max_value->value());
+        if(ui->spc_depth_min_value->value() >= ui->spc_depth_max_value->value()) {
+            if(ui->depth_range_cmb->currentIndex() == 1) {
+                ui->spc_depth_min_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+            }
+            else {
+                ui->spc_depth_min_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+                ui->spc_depth_max_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+            }
+        }
+        else {
+            emit setCamProperty(ctrlID,value,ui->spc_depth_min_value->value(),ui->spc_depth_max_value->value());
+        }
         return;
     case TOF_HID_CID_FACE_DETECTION:
         if(value){
@@ -592,9 +714,12 @@ void Cameraproperties::onCamPropChanged(int ctrlID,int value)
 		
 		if (ui->face_status_chkb->isChecked())
 		{
-			QMessageBox *msgBox = new QMessageBox(parent_widget);
-			msgBox->setText("DepthVista_Face_and_Smile_Detection_Application_Note.pdf");
-			msgBox->exec();
+            QMessageBox msgBox;
+            msgBox.setText("DepthVista_Face_and_Smile_Detection_Application_Note.pdf");
+            int result = msgBox.exec();
+            if(result == QMessageBox::Ok) {
+                msgBox.close();
+            }
 		}
         return;
     case TOF_HID_CID_SMILE_DETECTION:
@@ -606,9 +731,12 @@ void Cameraproperties::onCamPropChanged(int ctrlID,int value)
         emit setCamProperty(ctrlID,value,ui->smile_status_chkb->isChecked(),0);
 		if (ui->smile_status_chkb->isChecked())
 		{
-			QMessageBox *msgBox = new QMessageBox(parent_widget);
-			msgBox->setText("DepthVista_Face_and_Smile_Detection_Application_Note.pdf");
-			msgBox->exec();
+            QMessageBox msgBox;
+            msgBox.setText("DepthVista_Face_and_Smile_Detection_Application_Note.pdf");
+            int result = msgBox.exec();
+            if(result == QMessageBox::Ok) {
+                msgBox.close();
+            }
 		}
         return;
     case TOF_HID_CID_AUTO_EXP_ROI:
@@ -619,72 +747,6 @@ void Cameraproperties::onCamPropChanged(int ctrlID,int value)
         }
         emit setCamProperty(ctrlID,value,ui->win_size_cmb->currentIndex()+1,0);
         return;
-    case TOF_UVC_EXT_CID_DATA_MODE:
-        value = (DataMode)((value == 0) ? value : value = value + 1);
-        ui->label_27->setVisible((value != Raw_Mode));
-        ui->label_30->setVisible((value != Raw_Mode));
-        ui->min_depth_val->setVisible((value != Raw_Mode));
-        ui->max_depth_val->setVisible((value != Raw_Mode));
-
-        if(value==IR_Mode || value>=RGB_VGA_Mode || value==Raw_Mode){
-            if(ui->avg_depth_ir_grpbox->isChecked()){
-                ui->avg_depth_ir_grpbox->setChecked(false);
-            }
-
-        }
-        if (value == Depth_IR_Mode)
-        {
-            ui->DepthRawSaveCheckBox->setEnabled(true);
-            ui->IRSaveCheckBox->setEnabled(true);
-            ui->PLYSaveCheckBox->setEnabled(true);
-            ui->DepthSaveCheckBox->setEnabled(true);
-            ui->RGBSaveCheckBox->setEnabled(false);
-        }
-        else if (value == Depth_Mode)
-        {
-            ui->DepthRawSaveCheckBox->setEnabled(true);
-            ui->IRSaveCheckBox->setEnabled(false);
-            ui->PLYSaveCheckBox->setEnabled(true);
-            ui->DepthSaveCheckBox->setEnabled(true);
-            ui->RGBSaveCheckBox->setEnabled(false);
-        }
-        else if (value == IR_Mode)
-        {
-            ui->DepthRawSaveCheckBox->setEnabled(false);
-            ui->IRSaveCheckBox->setEnabled(true);
-            ui->PLYSaveCheckBox->setEnabled(false);
-            ui->DepthSaveCheckBox->setEnabled(false);
-            ui->RGBSaveCheckBox->setEnabled(false);
-        }
-        else if (value == Depth_IR_RGB_VGA_Mode || value == Depth_IR_RGB_HD_Mode)
-        {
-            ui->DepthRawSaveCheckBox->setEnabled(true);
-            ui->IRSaveCheckBox->setEnabled(true);
-            ui->PLYSaveCheckBox->setEnabled(true);
-            ui->DepthSaveCheckBox->setEnabled(true);
-            ui->RGBSaveCheckBox->setEnabled(true);
-        }
-        else if (value >= RGB_VGA_Mode)
-        {
-            ui->DepthRawSaveCheckBox->setEnabled(false);
-            ui->IRSaveCheckBox->setEnabled(false);
-            ui->PLYSaveCheckBox->setEnabled(false);
-            ui->DepthSaveCheckBox->setEnabled(false);
-            ui->RGBSaveCheckBox->setEnabled(true);
-        }
-		cDataMode = (DataMode)value;
-        value = (value == 0) ? value : value - 1;
-
-        break;
-    case TOF_UVC_EXT_CID_DEPTH_RANGE:
-        if(value){
-            ui->spc_depth_min_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN,TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
-            ui->spc_depth_max_value->setRange(TOF_APP_VAL_FAR_SPC_DEPTH_MIN,TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
-        }else{
-            ui->spc_depth_min_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN,TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
-            ui->spc_depth_max_value->setRange(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN,TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
-        }
-        break;
     case TOF_UVC_CID_WB_AUTO:
         ui->wb_slider->setEnabled(!value);
         ui->cur_wb_value->setEnabled(!value);
@@ -693,6 +755,16 @@ void Cameraproperties::onCamPropChanged(int ctrlID,int value)
         ui->exposure_slider->setEnabled(!value);
         ui->cur_expo_value->setEnabled(!value);
         value = !value;
+        if(value == 0)
+        {
+            ui->gain_label->setEnabled(false);
+            ui->gain_slider->setEnabled(false);
+        }
+        else
+        {
+            ui->gain_label->setEnabled(true);
+            ui->gain_slider->setEnabled(true);
+        }
         break;
     case TOF_APP_AVERAGE_IR_DISPLAY:
         value = ui->IR_display_checkBox->isChecked();
@@ -719,12 +791,12 @@ void Cameraproperties::onClipboardChanged(int id)
 }
 void Cameraproperties::deviceChanged(int index){
     if(index!=oldindex){
+        if(index == 0){
+            ui->device_list_cmb->setCurrentIndex(oldindex);
+        }
         if(index!=-1 && index!=0){
             ui->tabWidget->setEnabled(true);
             emit inputselected(index);
-        }
-        if(index ==0){
-            ui->device_list_cmb->setCurrentIndex(oldindex);
         }
     }
 }
@@ -748,9 +820,14 @@ bool Cameraproperties::eventFilter(QObject *obj, QEvent *event)
 }
 void Cameraproperties::onOpenFolder()
 {
+    current_save_img_dir = save_img_dir;
     save_img_dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),"/home",
                                                          QFileDialog::ShowDirsOnly
                                                          | QFileDialog::DontResolveSymlinks);
+    if(save_img_dir == "")
+    {
+        save_img_dir = current_save_img_dir;
+    }
     ui->save_image_location->setText(save_img_dir);
 }
 void Cameraproperties::savePLYPressed()
@@ -770,11 +847,27 @@ void Cameraproperties::onexitpressed()
 
 void Cameraproperties::onFrameSaveClicked()
 {
+    if(QSysInfo::productType() == "windows")
+    {
+        if(!QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista").exists()) {
+            QDir().mkdir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista");
+        }
+        if(!QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista/Pictures").exists()) {
+            QDir().mkdir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DepthVista/Pictures");
+        }
+    }
+    else
+    {
+        if(!QDir("Pictures").exists()) {
+            QDir().mkdir("Pictures");
+        }
+    }
 	if (ui->DepthSaveCheckBox->isChecked() || ui->IRSaveCheckBox->isChecked() || ui->RGBSaveCheckBox->isChecked() ||
 		ui->DepthRawSaveCheckBox->isChecked() || ui->PLYSaveCheckBox->isChecked())
 	{
-		ui->FrameSavePushButton->setEnabled(false);
-		emit startSavingFrames(ui->DepthSaveCheckBox->isChecked(), ui->IRSaveCheckBox->isChecked(), ui->RGBSaveCheckBox->isChecked(),
+        ui->FrameSaveGroupBox->setFocus();
+        ui->FrameSavePushButton->setEnabled(false);
+        emit startSavingFrames(ui->DepthSaveCheckBox->isChecked(), ui->IRSaveCheckBox->isChecked(), ui->RGBSaveCheckBox->isChecked(),
 			ui->DepthRawSaveCheckBox->isChecked(), ui->PLYSaveCheckBox->isChecked(), save_img_dir);
 	}
 
@@ -782,24 +875,68 @@ void Cameraproperties::onFrameSaveClicked()
 
 void Cameraproperties::onSavingFramesComplete()
 {
-	QMessageBox *msgBox = new QMessageBox(parent_widget);
-	msgBox->setText("Image(s) saved successfully!!");
-	msgBox->exec();
+    if((ui->DepthRawSaveCheckBox->isChecked()==true || ui->IRSaveCheckBox->isChecked()==true || ui->DepthSaveCheckBox->isChecked()==true || ui->RGBSaveCheckBox->isChecked()==true) || (ui->PLYSaveCheckBox->isChecked()==true))
+    {
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.setText("Image(s) saved successfully!!");
+        int result = msgBox.exec();
+        if(result==QMessageBox::Ok)
+        {
+            msgBox.close();
+        }
+    }
     ui->FrameSavePushButton->setEnabled(true);
+}
 
+void Cameraproperties::onOthersavedoneplyfail()
+{
+    if(((ui->DepthRawSaveCheckBox->isChecked()==true || ui->IRSaveCheckBox->isChecked()==true || ui->DepthSaveCheckBox->isChecked()==true || ui->RGBSaveCheckBox->isChecked()==true) && ui->PLYSaveCheckBox->isChecked()==true))
+    {
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.setText("PLY image not saved since No vertices found. Other image(s) saved successfully");
+        int result = msgBox.exec();
+        if(result == QMessageBox::Ok) {
+            msgBox.close();
+        }
+    }
+    if((ui->DepthRawSaveCheckBox->isChecked()==false && ui->IRSaveCheckBox->isChecked()==false && ui->PLYSaveCheckBox->isChecked()==true && ui->DepthSaveCheckBox->isChecked()==false && ui->RGBSaveCheckBox->isChecked()==false))
+    {
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Warning);
+        msgBox.setText("PLY image not saved since No vertices found");
+        int result = msgBox.exec();
+        if(result == QMessageBox::Ok) {
+            msgBox.close();
+        }
+    }
+    ui->FrameSavePushButton->setEnabled(true);
+}
+
+void Cameraproperties::enableAndDisableSaveButton()
+{
+    if(ui->DepthRawSaveCheckBox->checkState()==Qt::Checked || ui->DepthSaveCheckBox->checkState()==Qt::Checked || ui->IRSaveCheckBox->checkState()==Qt::Checked || ui->PLYSaveCheckBox->checkState()==Qt::Checked || ui->RGBSaveCheckBox->checkState()==Qt::Checked)
+    {
+        ui->FrameSavePushButton->setEnabled(true);
+    }
+    else
+    {
+        ui->FrameSavePushButton->setEnabled(false);
+    }
 }
 
 void Cameraproperties::onDeviceRemoved()
 {
     disconnect(ui->device_list_cmb, SIGNAL(currentIndexChanged(int)), this, SLOT(deviceChanged(int)));
-    ui->device_list_cmb->setCurrentIndex(oldindex);
-    ui->device_list_cmb->clear();
-    connect(ui->device_list_cmb, SIGNAL(currentIndexChanged(int)), this,
-        SLOT(deviceChanged(int)));
+    ui->device_list_cmb->setCurrentIndex(0);
+    connect(ui->device_list_cmb, SIGNAL(currentIndexChanged(int)), this, SLOT(deviceChanged(int)));
     ui->tabWidget->setEnabled(false);
-    ui->uniqueID_label->clear();
-    ui->firmwareVersion_label->clear();
     ui->rgbDCheckBox->setCheckState(Qt::CheckState::Unchecked);
+    ui->avg_depth_value->setText("0");
+    ui->std_depth_dev_value->setText("0");
+    ui->avg_irvalue->setText("0");
+    ui->std_ir_dev_value->setText("0");
 }
 
 void Cameraproperties::onTofCamModeSelected(bool ir_mode)
@@ -807,47 +944,69 @@ void Cameraproperties::onTofCamModeSelected(bool ir_mode)
     ui->RGBSaveCheckBox->setEnabled(false);
     ui->scrollArea_2->setEnabled(false);
 
+    if(cDataMode == DataMode::Depth_Mode || cDataMode == DataMode::Depth_IR_Mode) {
+        ui->postProcessingGrpBox->setEnabled(true);
+        ui->tof_coring_label->setEnabled(true);
+        ui->tof_coring_spinBox->setEnabled(true);
+        ui->avg_depth_ir_grpbox->setEnabled(true);
+        ui->spc_depth_grp_box->setEnabled(true);
+
+        if(cDataMode == Depth_Mode) {
+            ui->tof_gain_label->setEnabled(false);
+            ui->tof_gain_slider->setEnabled(false);
+            ui->cur_tof_gain_value->setEnabled(false);
+        }
+        else {
+            ui->tof_gain_label->setEnabled(true);
+            ui->tof_gain_slider->setEnabled(true);
+            ui->cur_tof_gain_value->setEnabled(true);
+        }
+    }
+    else {
+        ui->postProcessingGrpBox->setEnabled(false);
+        ui->postProcessingGrpBox->setChecked(false);
+        ui->tof_coring_label->setEnabled(false);
+        ui->tof_coring_spinBox->setEnabled(false);
+        ui->avg_depth_ir_grpbox->setEnabled(false);
+        ui->spc_depth_grp_box->setEnabled(false);
+        ui->spc_depth_grp_box->setChecked(false);
+        ui->tof_gain_label->setEnabled(true);
+        ui->tof_gain_slider->setEnabled(true);
+        ui->cur_tof_gain_value->setEnabled(true);
+    }
+
     //TOF range control
     ui->depth_range_label->setEnabled(true);
     ui->depth_range_cmb->setEnabled(true);
+    ui->RangeApplyButton->setEnabled(true);
+
     //TOF range control
     ui->label_27->setEnabled(true);
     ui->label_30->setEnabled(true);
     ui->min_depth_val->setEnabled(true);
     ui->max_depth_val->setEnabled(true);
+
     //RGB-D mapping control
 	ui->threeDgroupBox->setEnabled(ir_mode);
-	//ui->threeDgroupBox->set;
 	ui->rgbDCheckBox->setEnabled(false);
 	ui->undistortChkBx->setEnabled(true);
-
-
-    //Post Processing control
-    ui->postProcessingGrpBox->setEnabled(true);
-    //Post Processing control
-    ui->tof_coring_label->setEnabled(true);
-    ui->tof_coring_spinBox->setEnabled(true);
-    ui->tof_gain_label->setEnabled(true);
-    ui->tof_gain_slider->setEnabled(true);
-    ui->cur_tof_gain_value->setEnabled(true);
-
-    ui->avg_depth_ir_grpbox->setEnabled(true);
     ui->depth_ir_data_grpbox->setEnabled(true);
-    ui->spc_depth_grp_box->setEnabled(true);
 
     //Gain control
     ui->gain_label->setEnabled(true);
     ui->gain_slider->setEnabled(true);
     ui->cur_gain_value->setEnabled(true);
+
     //Exposure compensation control
     ui->expo_comp_label->setEnabled(true);
     ui->cur_expo_comp_value->setEnabled(true);
+
     //Frame rate control
     ui->fps_ctrl_label->setEnabled(true);
     ui->cur_fps_ctrl_value->setEnabled(true);
+
     //ROI Layout control
     ui->roi_layout->setEnabled(true);
-
 }
 
 void Cameraproperties::onDualCamModeSelected(bool vgaMode)
@@ -858,6 +1017,8 @@ void Cameraproperties::onDualCamModeSelected(bool vgaMode)
     //TOF range control
     ui->depth_range_label->setEnabled(true);
     ui->depth_range_cmb->setEnabled(true);
+    ui->RangeApplyButton->setEnabled(true);
+
     //TOF range control
     ui->label_27->setEnabled(true);
     ui->label_30->setEnabled(true);
@@ -868,17 +1029,14 @@ void Cameraproperties::onDualCamModeSelected(bool vgaMode)
     ui->rgbDCheckBox->setEnabled(ui->threeDgroupBox->isChecked());
     ui->undistortChkBx->setEnabled(!(ui->threeDgroupBox->isChecked()));
 	ui->threeDgroupBox->setEnabled(true);
-//    ui->rgbDCheckBox->setEnabled(ui->threeDgroupBox->isChecked());
 
     //Post Processing control
     ui->postProcessingGrpBox->setEnabled(true);
-    //Post Processing control
     ui->tof_coring_label->setEnabled(true);
     ui->tof_coring_spinBox->setEnabled(true);
     ui->tof_gain_label->setEnabled(true);
     ui->tof_gain_slider->setEnabled(true);
     ui->cur_tof_gain_value->setEnabled(true);
-
     ui->avg_depth_ir_grpbox->setEnabled(true);
     ui->depth_ir_data_grpbox->setEnabled(true);
     ui->spc_depth_grp_box->setEnabled(true);
@@ -887,68 +1045,89 @@ void Cameraproperties::onDualCamModeSelected(bool vgaMode)
     ui->gain_label->setEnabled(false);
     ui->gain_slider->setEnabled(false);
     ui->cur_gain_value->setEnabled(false);
+
     //Exposure compensation control
     ui->expo_comp_label->setEnabled(false);
     ui->cur_expo_comp_value->setEnabled(false);
+
     //Frame rate control
     ui->fps_ctrl_label->setEnabled(false);
     ui->cur_fps_ctrl_value->setEnabled(false);
+
     //ROI Layout control
     ui->roi_layout->setEnabled(false);
+    ui->expo_auto_btn->setChecked(true);
+    ui->expo_auto_btn->setEnabled(false);
 }
 
 void Cameraproperties::onRgbCamModeSelected()
 {
+    ui->expo_auto_btn->setEnabled(true);
     ui->RGBSaveCheckBox->setEnabled(true);
     ui->scrollArea_2->setEnabled(true);
-
-    //Gain control
-    ui->gain_label->setEnabled(true);
-    ui->gain_slider->setEnabled(true);
     ui->cur_gain_value->setEnabled(true);
+
     //Exposure compensation control
     ui->expo_comp_label->setEnabled(true);
     ui->cur_expo_comp_value->setEnabled(true);
+
     //Frame rate control
     ui->fps_ctrl_label->setEnabled(true);
     ui->cur_fps_ctrl_value->setEnabled(true);
+
     //ROI Layout control
     ui->roi_layout->setEnabled(true);
 
     //TOF range control
     ui->depth_range_label->setEnabled(false);
     ui->depth_range_cmb->setEnabled(false);
+    ui->RangeApplyButton->setEnabled(false);
+
     //TOF range control
     ui->label_27->setEnabled(false);
     ui->label_30->setEnabled(false);
     ui->min_depth_val->setEnabled(false);
     ui->max_depth_val->setEnabled(false);
+
     //RGB-D mapping control
 	ui->threeDgroupBox->setEnabled(false);
 
     //Post Processing control
     ui->postProcessingGrpBox->setEnabled(false);
+    ui->postProcessingGrpBox->setChecked(false);
+
     //Post Processing control
     ui->tof_coring_label->setEnabled(false);
     ui->tof_coring_spinBox->setEnabled(false);
     ui->tof_gain_label->setEnabled(false);
     ui->tof_gain_slider->setEnabled(false);
     ui->cur_tof_gain_value->setEnabled(false);
-
     ui->avg_depth_ir_grpbox->setEnabled(false);
+    ui->avg_depth_ir_grpbox->setChecked(false);
     ui->depth_ir_data_grpbox->setEnabled(false);
+    ui->depth_ir_data_grpbox->setChecked(false);
     ui->spc_depth_grp_box->setEnabled(false);
+    ui->spc_depth_grp_box->setChecked(false);
 }
 
 void Cameraproperties::onFirmwareVersionRead(uint8_t gMajorVersion, uint8_t gMinorVersion1, uint16_t gMinorVersion2, uint16_t gMinorVersion3)
 {
-
-    ui->firmwareVersion_label->setText(QString::number(gMajorVersion) + "." + QString::number(gMinorVersion1) + "." + QString::number(gMinorVersion2) + "." + QString::number(gMinorVersion3));
+    QMessageBox msgBox;
+    msgBox.setText("Firmware Version : "+QString::number(gMajorVersion) + "." + QString::number(gMinorVersion1) + "." + QString::number(gMinorVersion2) + "." + QString::number(gMinorVersion3));
+    int result = msgBox.exec();
+    if(result == QMessageBox::Ok) {
+        msgBox.close();
+    }
 }
 
 void Cameraproperties::onUniqueIDRead(uint64_t uniqueID)
 {
-    ui->uniqueID_label->setText(QString::number(uniqueID) );
+    QMessageBox msgBox;
+    msgBox.setText("Unique ID : "+QString::number(uniqueID));
+    int result = msgBox.exec();
+    if(result == QMessageBox::Ok) {
+        msgBox.close();
+    }
 }
 
 void Cameraproperties::RGBDMapping_checkBox_stateChange(int state)
@@ -970,13 +1149,119 @@ void Cameraproperties::RGBDMapping_enable(bool state)
 {
 	if(cDataMode == DataMode::Depth_IR_RGB_VGA_Mode || cDataMode == DataMode::Depth_IR_RGB_HD_Mode)
 		ui->rgbDCheckBox->setEnabled(state);
-	else
-		ui->rgbDCheckBox->setEnabled(false);
-
+    else
+        ui->rgbDCheckBox->setEnabled(false);
 }
 
 
 Cameraproperties::~Cameraproperties()
 {
     delete ui;
+}
+
+void Cameraproperties::on_DatamodeApplyButton_clicked()
+{
+    ui->DepthRawSaveCheckBox->setCheckState(Qt::CheckState::Unchecked);
+    ui->IRSaveCheckBox->setCheckState(Qt::CheckState::Unchecked);
+    ui->PLYSaveCheckBox->setCheckState(Qt::CheckState::Unchecked);
+    ui->DepthSaveCheckBox->setCheckState(Qt::CheckState::Unchecked);
+    ui->RGBSaveCheckBox->setCheckState(Qt::CheckState::Unchecked);
+
+    int value = ui->data_mode_cmb->currentIndex();
+    if(dataModeCurrentIndex != value) {
+        dataModeCurrentIndex = value;
+        value = (DataMode)((value == 0) ? value : value = value + 1);
+        ui->label_27->setVisible((value != Raw_Mode));
+        ui->label_30->setVisible((value != Raw_Mode));
+        ui->min_depth_val->setVisible((value != Raw_Mode));
+        ui->max_depth_val->setVisible((value != Raw_Mode));
+
+        if(value==IR_Mode || value>=RGB_VGA_Mode || value==Raw_Mode){
+            if(ui->avg_depth_ir_grpbox->isChecked()){
+                ui->avg_depth_ir_grpbox->setChecked(false);
+            }
+
+        }
+        if (value == Depth_IR_Mode)
+        {
+            ui->IR_display_checkBox->setEnabled(true);
+            ui->avg_depth_ir_grpbox->setChecked(false);
+            ui->DepthRawSaveCheckBox->setEnabled(true);
+            ui->IRSaveCheckBox->setEnabled(true);
+            ui->PLYSaveCheckBox->setEnabled(true);
+            ui->DepthSaveCheckBox->setEnabled(true);
+            ui->RGBSaveCheckBox->setEnabled(false);
+        }
+        else if (value == Depth_Mode)
+        {
+            ui->IR_display_checkBox->setEnabled(false);
+            ui->IR_display_checkBox->setChecked(false);
+            ui->DepthRawSaveCheckBox->setEnabled(true);
+            ui->IRSaveCheckBox->setEnabled(false);
+            ui->PLYSaveCheckBox->setEnabled(true);
+            ui->DepthSaveCheckBox->setEnabled(true);
+            ui->RGBSaveCheckBox->setEnabled(false);
+        }
+        else if (value == IR_Mode)
+        {
+            ui->IR_display_checkBox->setChecked(false);
+            ui->DepthRawSaveCheckBox->setEnabled(false);
+            ui->IRSaveCheckBox->setEnabled(true);
+            ui->PLYSaveCheckBox->setEnabled(false);
+            ui->DepthSaveCheckBox->setEnabled(false);
+            ui->RGBSaveCheckBox->setEnabled(false);
+        }
+        else if (value == Depth_IR_RGB_VGA_Mode || value == Depth_IR_RGB_HD_Mode)
+        {
+            ui->IR_display_checkBox->setEnabled(true);
+            ui->avg_depth_ir_grpbox->setChecked(false);
+            ui->DepthRawSaveCheckBox->setEnabled(true);
+            ui->IRSaveCheckBox->setEnabled(true);
+            ui->PLYSaveCheckBox->setEnabled(true);
+            ui->DepthSaveCheckBox->setEnabled(true);
+            ui->RGBSaveCheckBox->setEnabled(true);
+        }
+        else if (value >= RGB_VGA_Mode)
+        {
+            ui->IR_display_checkBox->setChecked(false);
+            ui->DepthRawSaveCheckBox->setEnabled(false);
+            ui->IRSaveCheckBox->setEnabled(false);
+            ui->PLYSaveCheckBox->setEnabled(false);
+            ui->DepthSaveCheckBox->setEnabled(false);
+            ui->RGBSaveCheckBox->setEnabled(true);
+        }
+        cDataMode = (DataMode)value;
+        value = (value == 0) ? value : value - 1;
+        emit setCamProperty(TOF_UVC_EXT_CID_DATA_MODE,value);
+
+        ui->avg_depth_value->setText("0");
+        ui->std_depth_dev_value->setText("0");
+        ui->avg_irvalue->setText("0");
+        ui->std_ir_dev_value->setText("0");
+    }
+}
+
+void Cameraproperties::on_RangeApplyButton_clicked()
+{
+    int value = ui->depth_range_cmb->currentIndex();
+    if(depthRangeCurrentIndex != value) {
+        depthRangeCurrentIndex = value;
+        if (value) {
+            ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+            ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+            ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+            ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+            ui->spc_depth_min_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MIN);
+            ui->spc_depth_max_value->setValue(TOF_APP_VAL_FAR_SPC_DEPTH_MAX);
+        }
+        else {
+            ui->spc_depth_min_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+            ui->spc_depth_min_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+            ui->spc_depth_max_value->setMinimum(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+            ui->spc_depth_max_value->setMaximum(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+            ui->spc_depth_min_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MIN);
+            ui->spc_depth_max_value->setValue(TOF_APP_VAL_NEAR_SPC_DEPTH_MAX);
+        }
+        emit setCamProperty(TOF_UVC_EXT_CID_DEPTH_RANGE,value);
+    }
 }

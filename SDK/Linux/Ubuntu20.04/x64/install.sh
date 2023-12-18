@@ -38,6 +38,9 @@ cp so/* $LIBDIR/
 rsync -l so/libDepthVistaSDK.so* $LIBDIR/
 rsync -l so/libopencv_world.so* $LIBDIR/
 echo "Lib done\n"
+
+
+
 echo "Installing DepthVistaSDK success."
 
 exit 0

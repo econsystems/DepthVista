@@ -30,6 +30,7 @@
 #define PRE_RGB_VGA_HEIGHT		480
 #define PRE_RGB_HD_WIDTH		1280
 #define PRE_RGB_HD_HEIGHT		720
+
 // Preview RGB Full HD Image Resolution 1920x1080
 #define PRE_RGB_FULL_HD_WIDTH	1920
 #define PRE_RGB_FULL_HD_HEIGHT	1080
@@ -37,6 +38,16 @@
 // Preview RGB Full HD Image Resolution 1920x1080
 #define PRE_RGB_ORIGINAL_WIDTH	1920
 #define PRE_RGB_ORIGINAL_HEIGHT 1200
+
+#define LENS_FOCUS_POINT_VGA_X               385.714
+#define LENS_FOCUS_POINT_VGA_Y               385.714
+#define LENS_PRINCIPLE_AXIS_VGA_X            320
+#define LENS_PRINCIPLE_AXIS_VGA_Y            240
+
+#define LENS_FOCUS_POINT_HD_X                385.714 * 1.67
+#define LENS_FOCUS_POINT_HD_Y                385.714 * 1.67
+#define LENS_PRINCIPLE_AXIS_HD_X             640
+#define LENS_PRINCIPLE_AXIS_HD_Y             360
 
 typedef enum 
 {
@@ -75,13 +86,14 @@ signals:
     Q_SIGNAL void setMousePointer(int x, int y, int ctrlID);
     Q_SIGNAL void updateData(int avgDepth, int stdDepth, int avgIR, int stdIR);
     Q_SIGNAL void savingFramesComplete();
+    Q_SIGNAL void othersavedoneplyfail();
     Q_SIGNAL void tofCamModeSelected(bool ir_mode);
     Q_SIGNAL void dualCamModeSelected(bool vgaMode);
     Q_SIGNAL void rgbCamModeSelected();
     Q_SIGNAL void deviceRemoved();
     Q_SIGNAL void firmwareVersionRead(uint8_t gMajorVersion, uint8_t gMinorVersion1, uint16_t gMinorVersion2, uint16_t gMinorVersion3);
     Q_SIGNAL void uniqueIDRead(uint64_t uniqueID);
-
+    Q_SIGNAL void tofSettingsDefault();
 
 protected slots:
     Q_SLOT void enumerateDevices();
@@ -96,7 +108,7 @@ protected slots:
     Q_SLOT void onwidgetMaximized(QWidget* widget);
     Q_SLOT void onApplyAvgChangesClicked(int avg_x, int avg_y);
     Q_SLOT void onStartSavingFrames(bool depth, bool ir, bool rgb, bool rawDepth, bool PYL, QString save_frame_dir);
-    Q_SLOT void savingPLYFramesOver();
+    Q_SLOT void savingPLYFramesOver(int plySaveStatus);
     Q_SLOT void onPCLDisplay_checkBox_stateChange(bool state);
     Q_SLOT void onRGBDMapping_checkBox_stateChange(int state);
     Q_SLOT void onUndistort_checkBox_stateChange(int state);
@@ -122,6 +134,7 @@ private:
 	bool								undistortDepth = false;
     int									depth_range;
 	int									count = 0;
+    bool                                plyImageSaveStatus = true;
 
     QLabel*								fps_label;
 
@@ -141,7 +154,7 @@ private:
     cv::Mat								UYVY_frame;
     cv::Mat								UYVY_frame_cpy;
     cv::Mat								rgbFrame;
-	QMutex								renderMutex; // mutex to use in rendering
+	QMutex								renderMutex;
 	uint64_t							skippedFrames = 0;
 	bool								first_occurance = true;
 
@@ -179,7 +192,7 @@ private:
 	cv::Mat								transform_matrix;
 
     int									avgRegionFlag = 0;
-    std::vector<MousePtr>				savePos;
+    std::vector<DepthPtr>				savePos;
 
     bool								save_ply_flag = false;
     bool								saved_ply_flag = true;
