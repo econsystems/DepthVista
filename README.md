@@ -59,7 +59,7 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 
 ## Refer other sample source
 
-- Refer DepthVista commandline application sample source using [this Build Manual](https://github.com/econsystems/depthVistaCmd)
+- Refer DepthVista commandline application sample source using [this page](https://github.com/econsystems/depthVistaCmd)
 
 ## Support
 
