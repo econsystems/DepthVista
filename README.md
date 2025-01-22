@@ -55,6 +55,7 @@ DepthVista Viewer is an Qt based UI Application which preview and control all th
 
 * DepthVista v1.0.0.4		-	10-Nov-2022
 * DepthVista v1.0.0.6		-	15-Dec-2023
+* DepthVista v1.0.0.11		-	22-Jan-2025
 
 ## Support
 
