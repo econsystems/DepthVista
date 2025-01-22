@@ -119,330 +119,12 @@ background-color: rgb(13, 13, 22);</string>
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-770</y>
-            <width>294</width>
-            <height>1372</height>
+            <y>0</y>
+            <width>289</width>
+            <height>1336</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_5">
-           <item row="6" column="0">
-            <widget class="QGroupBox" name="depth_ir_data_grpbox">
-             <property name="title">
-              <string>Depth IR data values</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_7">
-              <item>
-               <layout class="QFormLayout" name="depth_ir_data_layout">
-                <property name="horizontalSpacing">
-                 <number>9</number>
-                </property>
-                <property name="verticalSpacing">
-                 <number>9</number>
-                </property>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="avg_depth_label">
-                  <property name="text">
-                   <string>Average Depth:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="avg_depth_value">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="std_depth_dev_value">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="std_depth_dev_label">
-                  <property name="text">
-                   <string>Standard Depth deviation</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="avg_ir_label">
-                  <property name="text">
-                   <string>Average IR</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLabel" name="avg_irvalue">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="std_ir_dev_label">
-                  <property name="text">
-                   <string>Standard IR deviation</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLabel" name="std_ir_dev_value">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QPushButton" name="update_btn">
-                <property name="text">
-                 <string>Update</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="clipboard_layout">
-                <item>
-                 <widget class="QPushButton" name="copy_clipboard_btn">
-                  <property name="text">
-                   <string>Copy to Clipboard</string>
-                  </property>
-                  <attribute name="buttonGroup">
-                   <string notr="true">clipboard_btn_grp</string>
-                  </attribute>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="clear_clipboard_btn">
-                  <property name="text">
-                   <string>Clear Clipboard</string>
-                  </property>
-                  <attribute name="buttonGroup">
-                   <string notr="true">clipboard_btn_grp</string>
-                  </attribute>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <layout class="QGridLayout" name="gridLayout_2">
-             <property name="topMargin">
-              <number>9</number>
-             </property>
-             <property name="bottomMargin">
-              <number>9</number>
-             </property>
-             <property name="horizontalSpacing">
-              <number>6</number>
-             </property>
-             <item row="3" column="1">
-              <widget class="QLabel" name="cur_tof_gain_value">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>23</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="tof_gain_label">
-               <property name="text">
-                <string>IR GAIN</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QSlider" name="tof_gain_slider">
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>100</number>
-               </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QSpinBox" name="tof_coring_spinBox">
-               <property name="maximum">
-                <number>16383</number>
-               </property>
-               <property name="singleStep">
-                <number>20</number>
-               </property>
-               <property name="value">
-                <number>100</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="tof_coring_label">
-               <property name="text">
-                <string>TOF MASK</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="10" column="0">
-            <widget class="QGroupBox" name="spc_depth_grp_box">
-             <property name="layoutDirection">
-              <enum>Qt::LeftToRight</enum>
-             </property>
-             <property name="title">
-              <string>Save PLY with Specific Depth Range</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="checked">
-              <bool>false</bool>
-             </property>
-             <layout class="QFormLayout" name="formLayout_5">
-              <item row="0" column="0">
-               <widget class="QLabel" name="spc_depth_max_label">
-                <property name="text">
-                 <string>Minimum</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="spc_depth_min_label">
-                <property name="text">
-                 <string>Maximum</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QSpinBox" name="spc_depth_max_value">
-                <property name="maximumSize">
-                 <size>
-                  <width>100</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="layoutDirection">
-                 <enum>Qt::LeftToRight</enum>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-                <property name="suffix">
-                 <string> mm</string>
-                </property>
-                <property name="prefix">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="spc_depth_min_value">
-                <property name="maximumSize">
-                 <size>
-                  <width>100</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-                <property name="suffix">
-                 <string> mm</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QGroupBox" name="IMUGrpBox">
-             <property name="title">
-              <string>IMU Embedded Data</string>
-             </property>
-             <layout class="QFormLayout" name="formLayout_7">
-              <item row="0" column="0">
-               <widget class="QRadioButton" name="IMUEnableRadioBtn">
-                <property name="text">
-                 <string>Enable</string>
-                </property>
-                <attribute name="buttonGroup">
-                 <string notr="true">IMU_btn_grp</string>
-                </attribute>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QRadioButton" name="IMUDisableRadioBtn">
-                <property name="text">
-                 <string>Disable</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-                <attribute name="buttonGroup">
-                 <string notr="true">IMU_btn_grp</string>
-                </attribute>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <layout class="QFormLayout" name="formLayout_8">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_27">
-               <property name="text">
-                <string>Min Depth</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="min_depth_val">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_30">
-               <property name="text">
-                <string>Max Depth</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="max_depth_val">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
            <item row="0" column="0">
             <layout class="QFormLayout" name="formLayout_4">
              <property name="fieldGrowthPolicy">
@@ -574,28 +256,13 @@ background-color: rgb(13, 13, 22);</string>
             </layout>
            </item>
            <item row="2" column="0">
-            <widget class="QGroupBox" name="threeDgroupBox">
-             <property name="title">
+            <widget class="QCheckBox" name="threeDgroupBox">
+             <property name="text">
               <string>3D Display</string>
              </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="checked">
-              <bool>false</bool>
-             </property>
-             <layout class="QFormLayout" name="formLayout_6">
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="rgbDCheckBox">
-                <property name="text">
-                 <string>RGB-D Mapping</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </widget>
            </item>
-           <item row="9" column="0">
+           <item row="11" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
               <widget class="QLabel" name="save_image_location">
@@ -636,6 +303,68 @@ background-color: rgb(13, 13, 22);</string>
             </layout>
            </item>
            <item row="5" column="0">
+            <widget class="QGroupBox" name="postProcessingGrpBox">
+             <property name="title">
+              <string>Post Processing</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_11">
+              <item row="0" column="0">
+               <layout class="QFormLayout" name="formLayout_9">
+                <item row="0" column="0">
+                 <widget class="QCheckBox" name="depth_planarize_chkb">
+                  <property name="text">
+                   <string>Planarized Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QCheckBox" name="edge_chkBox">
+                  <property name="text">
+                   <string>Edge Detection</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QCheckBox" name="spatial_chkBox">
+                  <property name="text">
+                   <string>Spatial Filter</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QCheckBox" name="temporal_chkBox">
+                  <property name="text">
+                   <string>Temporal Filter</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QCheckBox" name="undistortChkBx">
+                  <property name="text">
+                   <string>Undistort Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QCheckBox" name="rgbDCheckBox">
+                  <property name="text">
+                   <string>RGB-D Mapping</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QCheckBox" name="flying_pixel_chkb">
+                  <property name="text">
+                   <string>Flying Pixel Filter</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="7" column="0">
             <widget class="QGroupBox" name="avg_depth_ir_grpbox">
              <property name="title">
               <string> Display Average Depth IR data </string>
@@ -768,14 +497,7 @@ background-color: rgb(13, 13, 22);</string>
              </layout>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="save_img_label">
-             <property name="text">
-              <string>Save Frames Location:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="0">
+           <item row="13" column="0">
             <widget class="QGroupBox" name="FrameSaveGroupBox">
              <property name="title">
               <string>Saving Frames</string>
@@ -783,10 +505,10 @@ background-color: rgb(13, 13, 22);</string>
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
                <layout class="QGridLayout" name="gridLayout_10">
-                <item row="1" column="1">
-                 <widget class="QCheckBox" name="DepthRawSaveCheckBox">
+                <item row="0" column="0">
+                 <widget class="QCheckBox" name="PLYSaveCheckBox">
                   <property name="text">
-                   <string>Raw Depth</string>
+                   <string>PLY</string>
                   </property>
                  </widget>
                 </item>
@@ -797,24 +519,24 @@ background-color: rgb(13, 13, 22);</string>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QCheckBox" name="DepthSaveCheckBox">
-                  <property name="text">
-                   <string>Depth</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QCheckBox" name="PLYSaveCheckBox">
-                  <property name="text">
-                   <string>PLY</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="0" column="1">
                  <widget class="QCheckBox" name="IRSaveCheckBox">
                   <property name="text">
                    <string>IR</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QCheckBox" name="DepthRawSaveCheckBox">
+                  <property name="text">
+                   <string>Raw Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QCheckBox" name="DepthSaveCheckBox">
+                  <property name="text">
+                   <string>Depth</string>
                   </property>
                  </widget>
                 </item>
@@ -834,63 +556,47 @@ background-color: rgb(13, 13, 22);</string>
              </layout>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QGroupBox" name="postProcessingGrpBox">
-             <property name="title">
-              <string>Post Processing</string>
+           <item row="10" column="0">
+            <widget class="QLabel" name="save_img_label">
+             <property name="text">
+              <string>Save Frames Location:</string>
              </property>
-             <layout class="QFormLayout" name="formLayout_11">
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QGroupBox" name="IMUGrpBox">
+             <property name="title">
+              <string>IMU Embedded Data</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_7">
               <item row="0" column="0">
-               <layout class="QFormLayout" name="formLayout_9">
-                <item row="0" column="0">
-                 <widget class="QCheckBox" name="depth_planarize_chkb">
-                  <property name="text">
-                   <string>Planarized Depth</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QCheckBox" name="edge_chkBox">
-                  <property name="text">
-                   <string>Edge Detection</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QCheckBox" name="spatial_chkBox">
-                  <property name="text">
-                   <string>Spatial Filter</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QCheckBox" name="temporal_chkBox">
-                  <property name="text">
-                   <string>Temporal Filter</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QCheckBox" name="undistortChkBx">
-                  <property name="text">
-                   <string>Undistort Depth</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+               <widget class="QRadioButton" name="IMUEnableRadioBtn">
+                <property name="text">
+                 <string>Enable</string>
+                </property>
+                <attribute name="buttonGroup">
+                 <string notr="true">IMU_btn_grp</string>
+                </attribute>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QRadioButton" name="IMUDisableRadioBtn">
+                <property name="text">
+                 <string>Disable</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+                <attribute name="buttonGroup">
+                 <string notr="true">IMU_btn_grp</string>
+                </attribute>
+               </widget>
               </item>
              </layout>
             </widget>
            </item>
-           <item row="12" column="0">
+           <item row="15" column="0">
             <layout class="QGridLayout" name="gridLayout_4">
-             <item row="0" column="0">
-              <widget class="QPushButton" name="uniqueID_btn">
-               <property name="text">
-                <string>Unique ID</string>
-               </property>
-              </widget>
-             </item>
              <item row="1" column="0">
               <widget class="QPushButton" name="fimware_version_btn">
                <property name="text">
@@ -898,7 +604,361 @@ background-color: rgb(13, 13, 22);</string>
                </property>
               </widget>
              </item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="uniqueID_btn">
+               <property name="text">
+                <string>Unique ID</string>
+               </property>
+              </widget>
+             </item>
             </layout>
+           </item>
+           <item row="12" column="0">
+            <widget class="QGroupBox" name="spc_depth_grp_box">
+             <property name="layoutDirection">
+              <enum>Qt::LeftToRight</enum>
+             </property>
+             <property name="title">
+              <string>Save PLY with Specific Depth Range</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+             <layout class="QFormLayout" name="formLayout_5">
+              <item row="0" column="0">
+               <widget class="QLabel" name="spc_depth_max_label">
+                <property name="text">
+                 <string>Minimum</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="spc_depth_min_label">
+                <property name="text">
+                 <string>Maximum</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="spc_depth_max_value">
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> mm</string>
+                </property>
+                <property name="prefix">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="spc_depth_min_value">
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> mm</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <layout class="QGridLayout" name="gridLayout_2">
+             <property name="topMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
+              <number>9</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>6</number>
+             </property>
+             <item row="3" column="1">
+              <widget class="QLabel" name="cur_tof_gain_value">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>23</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="tof_gain_label">
+               <property name="text">
+                <string>IR GAIN</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QSlider" name="tof_gain_slider">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QSpinBox" name="tof_coring_spinBox">
+               <property name="maximum">
+                <number>16383</number>
+               </property>
+               <property name="singleStep">
+                <number>20</number>
+               </property>
+               <property name="value">
+                <number>100</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="tof_coring_label">
+               <property name="text">
+                <string>TOF MASK</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="8" column="0">
+            <widget class="QGroupBox" name="depth_ir_data_grpbox">
+             <property name="title">
+              <string>Depth IR data values</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <layout class="QFormLayout" name="depth_ir_data_layout">
+                <property name="horizontalSpacing">
+                 <number>9</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>9</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="avg_depth_label">
+                  <property name="text">
+                   <string>Average Depth:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="avg_depth_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="std_depth_dev_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="std_depth_dev_label">
+                  <property name="text">
+                   <string>Standard Depth deviation</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="avg_ir_label">
+                  <property name="text">
+                   <string>Average IR</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="avg_irvalue">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="std_ir_dev_label">
+                  <property name="text">
+                   <string>Standard IR deviation</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLabel" name="std_ir_dev_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QPushButton" name="update_btn">
+                <property name="text">
+                 <string>Update</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="clipboard_layout">
+                <item>
+                 <widget class="QPushButton" name="copy_clipboard_btn">
+                  <property name="text">
+                   <string>Copy to Clipboard</string>
+                  </property>
+                  <attribute name="buttonGroup">
+                   <string notr="true">clipboard_btn_grp</string>
+                  </attribute>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="clear_clipboard_btn">
+                  <property name="text">
+                   <string>Clear Clipboard</string>
+                  </property>
+                  <attribute name="buttonGroup">
+                   <string notr="true">clipboard_btn_grp</string>
+                  </attribute>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <layout class="QFormLayout" name="formLayout_8">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_27">
+               <property name="text">
+                <string>Min Depth</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="min_depth_val">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_30">
+               <property name="text">
+                <string>Max Depth</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="max_depth_val">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="14" column="0">
+            <widget class="QGroupBox" name="imuValGroupBox">
+             <property name="title">
+              <string>Show IMU Values</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_12">
+              <item row="0" column="0">
+               <layout class="QFormLayout" name="formLayout_13">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="x_label">
+                  <property name="text">
+                   <string>x :</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="x_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="y_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="z_label">
+                  <property name="text">
+                   <string>z :</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="z_value">
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="y_label">
+                  <property name="text">
+                   <string>y :</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -927,8 +987,8 @@ background-color: rgb(13, 13, 22);</string>
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>294</width>
-            <height>881</height>
+            <width>267</width>
+            <height>880</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_7">
@@ -1716,12 +1776,12 @@ background-color: rgb(13, 13, 22);</string>
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="auto_roi_btn_grp"/>
   <buttongroup name="clipboard_btn_grp"/>
   <buttongroup name="avg_depth_ir_btn_grp"/>
-  <buttongroup name="IMU_btn_grp"/>
   <buttongroup name="cursor_color_btn_grp"/>
+  <buttongroup name="IMU_btn_grp"/>
   <buttongroup name="smile_detect_btn_grp"/>
-  <buttongroup name="auto_roi_btn_grp"/>
   <buttongroup name="face_detect_btn_grp"/>
  </buttongroups>
 </ui>

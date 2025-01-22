@@ -41,11 +41,14 @@ struct OpenGLDisplay::OpenGLDisplayImpl
 
 };
 
+/*************************************************************************/
+
 OpenGLDisplay::OpenGLDisplay(QWidget* parent , Pixelformat pixformat)
     : QOpenGLWidget(parent)
     , pixelformat(pixformat)
     , impl(new OpenGLDisplayImpl)
 {
+
     srcBuffer = NULL;
     connect(this,SIGNAL(maximized(QWidget*)),parent,SLOT(onwidgetMaximized(QWidget*)));
     connect(this,SIGNAL(renderframe()),this, SLOT(updateFrame()));
@@ -53,12 +56,12 @@ OpenGLDisplay::OpenGLDisplay(QWidget* parent , Pixelformat pixformat)
 }
 void OpenGLDisplay::updateFrame()
 {
-    update();
-}
 
+        update();
+}
 OpenGLDisplay::~OpenGLDisplay()
 {
-    if(pixelformat==Pixelformat::Y16) {
+    if(pixelformat==Pixelformat::Y16){
         if(srcBuffer) {
             free(srcBuffer); srcBuffer = NULL;
         }
@@ -67,6 +70,7 @@ OpenGLDisplay::~OpenGLDisplay()
 
 void OpenGLDisplay::InitDrawBuffer(unsigned bsize)
 {
+
     renderMutex.lock();
     gotFrame = false;
     impl->mFrameSize = bsize;
@@ -75,12 +79,17 @@ void OpenGLDisplay::InitDrawBuffer(unsigned bsize)
             free(srcBuffer); srcBuffer = NULL;
         }
         srcBuffer = (unsigned char *)malloc(bsize);
+        //if(!srcBuffer){
+        //    qDebug()<<__func__<<"memory allocation failed";
+        //}
     }
     renderMutex.unlock();
+
 }
 
 void OpenGLDisplay::DisplayVideoFrame(unsigned char *data, int frameWidth, int frameHeight)
 {
+
     renderMutex.lock();
     impl->mVideoW = frameWidth;
     impl->mVideoH = frameHeight;
@@ -92,7 +101,8 @@ void OpenGLDisplay::DisplayVideoFrame(unsigned char *data, int frameWidth, int f
     case Y16:
         pfmb = (uint8_t *)srcBuffer;
         if(pfmb){
-            for(uint32_t l=0; l<(frameWidth * frameHeight*2); l=l+2) {
+            for(uint32_t l=0; l<(frameWidth * frameHeight*2); l=l+2) /* Y16 to YUYV conversion */
+            {
                 *pfmb++ = data[l+1];
                 *pfmb++ = 0x80;
             }
@@ -105,10 +115,14 @@ void OpenGLDisplay::DisplayVideoFrame(unsigned char *data, int frameWidth, int f
     }
     gotFrame = true;
     renderMutex.unlock();
+
+
     emit renderframe();
+
 }
 void OpenGLDisplay::shaderUYVY()
 {
+
     /* Modern opengl rendering pipeline relies on shaders to handle incoming data.
      *  Shader: is a small function written in OpenGL Shading Language (GLSL).
      * GLSL is the language that makes up all OpenGL shaders.
@@ -138,6 +152,8 @@ void OpenGLDisplay::shaderUYVY()
     impl->mFShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
 
     // Fragment shader source code
+
+
     const char *fsrc = "#ifdef GL_ES\n"
                      "precision highp float;\n"
                      "#endif\n"
@@ -160,7 +176,7 @@ void OpenGLDisplay::shaderUYVY()
 
                      //We had put the Y values of each pixel to the R,G,B components by
                      //GL_LUMINANCE, that's why we're pulling it from the R component,
-                     //we can also use G or B
+                     //we could also use G or B
 
                      "if (mod(xcoord, 2.0) == 0.0) {\n"
                      "   luma_chroma = texture2D(uyvy_texture, textureOut);\n"
@@ -227,14 +243,17 @@ void OpenGLDisplay::shaderUYVY()
 
     glVertexAttribPointer(mPositionLoc, 3, GL_FLOAT, false, 12, mVerticesDataPosition);
     glVertexAttribPointer(mTexCoordLoc, 2, GL_FLOAT, false, 8, mVerticesDataTextCord);
-    
     // set active texture and give input y buffer
+
     impl->mShaderProgram->enableAttributeArray(0);
     impl->mShaderProgram->enableAttributeArray(1);
+
+
 }
 
 void OpenGLDisplay::renderUYVY()
 {
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture (GL_TEXTURE_2D, TextureId);
     glUniform1i(samplerLoc, 1);
@@ -243,14 +262,17 @@ void OpenGLDisplay::renderUYVY()
 
         if (srcBuffer != NULL){
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, impl->mVideoW/2, impl->mVideoH, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)srcBuffer);
+
         }
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndicesData);
     }
     renderMutex.unlock();
+
 }
 
 void OpenGLDisplay::shaderY16()
 {
+
     /* Modern opengl rendering pipeline relies on shaders to handle incoming data.
      *  Shader: is a small function written in OpenGL Shading Language (GLSL).
      * GLSL is the language that makes up all OpenGL shaders.
@@ -303,7 +325,7 @@ void OpenGLDisplay::shaderY16()
 
                        //We had put the Y values of each pixel to the R,G,B components by
                        //GL_LUMINANCE, that's why we're pulling it from the R component,
-                       //we can also use G or B
+                       //we could also use G or B
 
                        "if (mod(xcoord, 2.0) == 0.0) {\n"
                        "   luma_chroma = texture2D(yuyv_texture, v_texCoord);\n"
@@ -373,6 +395,7 @@ void OpenGLDisplay::shaderY16()
 
 void OpenGLDisplay::renderY16()
 {
+
     // set active texture and give input y buffer
     glActiveTexture(GL_TEXTURE2);
     glBindTexture (GL_TEXTURE_2D, TextureId);
@@ -386,9 +409,12 @@ void OpenGLDisplay::renderY16()
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndicesData);
     }
     renderMutex.unlock();
+
+
 }
 void OpenGLDisplay::shaderRGB()
 {
+
     /* Modern opengl rendering pipeline relies on shaders to handle incoming data.
      *  Shader: is a small function written in OpenGL Shading Language (GLSL).
      * GLSL is the language that makes up all OpenGL shaders.
@@ -418,6 +444,8 @@ void OpenGLDisplay::shaderRGB()
     impl->mFShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
 
     // Fragment shader source code
+
+
     const char *fsrc = "#ifdef GL_ES\n"
                      "precision highp float;\n"
                      "#endif\n"
@@ -442,8 +470,10 @@ void OpenGLDisplay::shaderRGB()
                        "}";
 
 
+
     bCompile = impl->mFShader->compileSourceCode(fsrc);
-    if(!bCompile) {
+    if(!bCompile)
+    {
         throw OpenGlException();
     }
 
@@ -485,27 +515,31 @@ void OpenGLDisplay::shaderRGB()
 
     impl->mShaderProgram->enableAttributeArray(0);
     impl->mShaderProgram->enableAttributeArray(1);
+
 }
 
 void OpenGLDisplay::renderRGB()
 {
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, TextureId);
     glUniform1i(samplerLoc, 0);
 
     renderMutex.lock();
-    if(gotFrame) {
+    if(gotFrame){
 
-        if (srcBuffer != NULL) {
+        if (srcBuffer != NULL){
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, impl->mVideoW, impl->mVideoH, 0, GL_RGB, GL_UNSIGNED_BYTE, (unsigned char*)srcBuffer);
         }
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndicesData);
     }
+
     renderMutex.unlock();
 }
 
 void OpenGLDisplay::initializeGL()
 {
+
     initializeOpenGLFunctions();
     glEnable(GL_DEPTH_TEST);
     switch (pixelformat) {
@@ -520,6 +554,7 @@ void OpenGLDisplay::initializeGL()
         break;
     }
     glClearColor (0, 0, 0, 0); // set the background color
+
 }
 
 void OpenGLDisplay::resizeGL(int w, int h)
@@ -535,9 +570,9 @@ void OpenGLDisplay::resizeGL(int w, int h)
 void OpenGLDisplay::paintGL()
 {
 
-    if(gotFrame) {
+    if(gotFrame){
 
-        if(impl->mShaderProgram) {
+        if(impl->mShaderProgram){
 
             switch (pixelformat) {
 

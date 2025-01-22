@@ -5,9 +5,7 @@
  * @brief The data modes that determine the frame output from the device.
  */
 typedef enum {
-	ModeUnknown = 255,
-	Depth_IR_Mode = 0, 			
-	Raw_Mode = 254,			
+	Depth_IR_Mode = 0,
 	Depth_Mode = 2,
 	IR_Mode = 3,
 	Depth_IR_RGB_VGA_Mode = 4,
@@ -15,13 +13,26 @@ typedef enum {
 	RGB_VGA_Mode = 6,
 	RGB_HD_Mode = 7,
 	RGB_Full_HD_Mode = 8,
-	RGB_Original_Mode = 9,
+	RGB_1200p_Mode = 9,
 }DataMode;
 
+typedef enum{
+	Low = 0,
+	Critical = 1,
+	High = 2,
+	Disable = 3
+}LogLevel;
+
+typedef enum{
+	Console = 1,
+	LogFile = 2,
+	BothConsoleAndLogFile = 3,
+}Logging;
+
 typedef enum {
-	Dual_Camera_Mode = 0,
-	RGB_Camera_Mode = 1,
-	TOF_Camera_Mode = 2,
+	DualCameraMode = 0,
+	RGBCameraMode = 1,
+	TOFCameraMode = 2,
 }CameraMode;
 /**
  * @brief Depth range setting.\n
@@ -38,18 +49,10 @@ typedef enum {
  * @brief Specifies the type of image frame.
  */
 typedef enum {
-	// Raw Mode frames
-	RawIRFrame,					//!< Raw IR frame with 16 bits per pixel.
-	// Depth Mode frames
-	DepthPreviewFrame,			//!< Depth frame with 8 bits per pixel.
 	IRPreviewFrame,				//!< IR frame with 12 bits per pixel multiplied with IR Gain.
-	DepthColorMap,
+    DepthColorMap,              //!< Colormap applied for raw depth frame
 	RGBFrame,					//!< RGB Frame with 16bit per pixel.
-	// Raw frames.
-	DepthIrRgbRawFrame,			//!< Raw Depth+IR+RGB frame with 40 bits per pixel.
-	DepthIrRawFrame,			//!< Depth+IR frame with 12 bits per pixel.
-	DepthRawFrame,				//!< Depth frame with 12 bits per pixel.
-	IRRawFrame,					//!< Raw IR frame with 12 bits per pixel.
+    DepthRawFrame,				//!< Depth raw frame with 16 bits per pixel.
 }FrameType;
 
 /**
@@ -77,9 +80,12 @@ typedef enum {
 	UVCOpenFail = -16,
 	TimeoutError = -17,			//!< Read on file descriptor timedout.
     InvalidBuffer = -18,		//!< Frame from the camera is invalid.
-    InvalidHidHandle = -19,
-    RGB_DCalibNotFound = -20,   //!< RGB-D Calibration Data not found in the device
-    FrameSeparationFailed = -21, //!< Frame separation logic failed
+    RGB_DCalibNotFound = -19,   //!< RGB-D Calibration Data not found in the device
+    FrameSeparationFailed = -20, //!< Frame separation logic failed
+    RegisterCallBackFailed = -21,  //!< Registering Call back to SDK failed
+    CameraAlreadyOpen = -22,  //!< Device is already open>
+    InvalidDataMode = -23,   //<! Current Datamode doesn't support the request
+    Failed = -24,
 	Others = -255,				//!< An unknown error occurred.
 }Result;
 
@@ -103,10 +109,16 @@ typedef enum {
     TOF_UVC_CID_EXPSOURE_ABS,
 }UVCPropID;
 
+
+
 typedef enum {
-	PIX_FMT_UYVY,
-	PIX_FMT_Y16,
-	PIX_FMT_RGB,
-}PixFormat;
+  Not_Calibrated = -1,
+	Only_VGA = 0,
+	Only_HD = 1,
+	Both_VGA_HD = 2
+}CalibValidFlag;
+
+
+
 
 #endif	/* DEPTHVISTA_ENUMS_H */

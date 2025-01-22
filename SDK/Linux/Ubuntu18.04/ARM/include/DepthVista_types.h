@@ -1,12 +1,9 @@
 #ifndef DEPTHVISTA_TYPES_H
 #define DEPTHVISTA_TYPES_H
 
-#define DB_HIGH			0
-#define DB_CRITICAL		0
-#define DB_LOW			1
-
 #include <string>
 #include <functional>
+#include "DepthVista_enums.h"
 
 /**
  * @brief Specifies the information about the device.
@@ -19,6 +16,29 @@ typedef struct
     char devicePath[500];
     char serialNo[50];
 }DeviceInfo;
+
+typedef struct
+{
+	double fx, fy, cx, cy;
+	double k1, k2, p1, p2, k3;
+}IntrinsicCalibParams;
+
+typedef struct
+{
+	double rotationalVec[3][3];
+	double translationalVec[3];
+}ExtrinsicCalibParams;
+
+typedef struct
+{
+	IntrinsicCalibParams depthCamVGAIntrinsic, rgbCamVGAIntrinsic, depthCamHDIntrinsic, rgbCamHDIntrinsic;
+	ExtrinsicCalibParams VGAextrinsic, HDextrinsic;
+}CalibrationParams;
+
+typedef struct
+{
+	char serialNo[50];
+}DeviceHandle;
 
 typedef struct
 {
@@ -40,20 +60,18 @@ typedef struct
 
 typedef struct
 {
-	int X;
-	int Y;
-	int depth;
-	int IR;
-}Avgstrct;
-
-typedef struct
-{
 	unsigned char* frame_data;
 	uint16_t width;
 	uint16_t height;
 	uint8_t pixel_format;
-	uint32_t total_size;
+    uint32_t size;
+    uint64_t time_stamp;
 }ToFFrame;
+
+typedef  struct
+{
+    ToFFrame rgb, ir, raw_depth, depth_colormap;
+}Frames;
 
 typedef struct {
 	uint8_t IMU_MODE;

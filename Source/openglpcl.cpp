@@ -29,6 +29,8 @@ struct OpenGLPCL::OpenGLPCLImpl
 
 };
 
+/*************************************************************************/
+
 OpenGLPCL::OpenGLPCL(QWidget* parent , PixelformatPCL pixformat)
     : QOpenGLWidget(parent)
     , pixelFormat(pixformat)
@@ -43,9 +45,9 @@ OpenGLPCL::OpenGLPCL(QWidget* parent , PixelformatPCL pixformat)
 		imgdata = (float*)malloc(640 * 480 * 3 * sizeof(float));
 		if (imgdata == NULL)
 		{
-			qDebug() << "imgaData memory allocation failed";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation failed");
 		}else
-			qDebug() << "imgaData memory allocation success";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation success");
 
 	}
 
@@ -59,7 +61,8 @@ OpenGLPCL::OpenGLPCL(QWidget* parent , PixelformatPCL pixformat)
     connect(this,SIGNAL(ply_file_save(int)), parent, SLOT(savingPLYFramesOver(int)));
     lastMousePos.setX(1);
     lastMousePos.setY(1);
-    initialFoV = 15;
+	initialFoV = 15;
+
     local_pos = {0.0,0.0,0.0};
     initialPos = true;
     local_rot = {0.0,0.0,0.0};
@@ -71,18 +74,20 @@ OpenGLPCL::OpenGLPCL(QWidget* parent , PixelformatPCL pixformat)
 }
 void OpenGLPCL::updateFrame()
 {
-    update();
+        update();
 }
 OpenGLPCL::~OpenGLPCL()
 {
 	renderMutex.lock();
-    if (imgdata) {
+    if (imgdata)
+    {
         free(imgdata);
         imgdata = NULL;
 		if(imgdata == NULL)
-			qDebug() << "imgaData memory free success";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory free success");
 		else
-			qDebug() << "imgaData memory free failed";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory free failed");
+
 
     }
 	renderMutex.unlock();
@@ -94,34 +99,40 @@ void OpenGLPCL::dataModeChanged(uint8_t dataMode)
 {
 	renderMutex.lock();
 
-	if (imgdata != NULL) {
+	if (imgdata != NULL)
+	{
 		free(imgdata);
 		imgdata = NULL;
 		if (imgdata == NULL)
-			qDebug() << "imgaData memory free success datamode change";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory free success datamode change");
 		else
-			qDebug() << "imgaData memory free failed";
+			PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory free failed");
 	}
-	if (imgdata == NULL) {
-		if (dataMode == Depth_IR_RGB_VGA_Mode) {
+	if (imgdata == NULL)
+	{
+		if (dataMode == Depth_IR_RGB_VGA_Mode)
+		{
 			currentWidth = 640;
 			currentHeight = 480;
 			imgdata = (float*)malloc(640 * 480 * 3 * sizeof(float));
-			if (imgdata == NULL) {
-				qDebug() << "imgaData memory allocation failed";
+			if (imgdata == NULL)
+			{
+				PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation failed");
 			}
 			else
-				qDebug() << "imgaData memory allocation success VGA";
+				PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation success VGA");
 		}
-		else if (dataMode == Depth_IR_RGB_HD_Mode) {
+		else if (dataMode == Depth_IR_RGB_HD_Mode)
+		{
 			currentWidth = 1280;
 			currentHeight = 720;
 			imgdata = (float*)malloc(1280 * 720 * 3 * sizeof(float));
-			if (imgdata == NULL) {
-				qDebug() << "imgaData memory allocation failed";
+			if (imgdata == NULL)
+			{
+				PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation failed");
 			}
 			else
-				qDebug() << "imgaData memory allocation success HD";
+				PrintLog(LOG_ESSENTIAL_DEBUG, "imgaData memory allocation success HD");
 		}
 
 
@@ -136,8 +147,8 @@ void OpenGLPCL::InitDrawBuffer(unsigned bsize)
     gotFrame = false;
     impl->mFrameSize = bsize;
     renderMutex.unlock();
-}
 
+}
 void OpenGLPCL::setSavePLYfile(QString file_name, bool save_specific_range, uint16_t depth_min_val, uint16_t depth_max_val)
 {
     plyFileName = file_name;
@@ -146,7 +157,8 @@ void OpenGLPCL::setSavePLYfile(QString file_name, bool save_specific_range, uint
 	depth_max_val_ply = depth_max_val;
     savePLYfile = true;
     points.clear();
-    if (ply_thread_running == false) {
+    if (ply_thread_running == false)
+    {
         ply_thread_running = true;
         savePLYThread = QtConcurrent::run(this, &OpenGLPCL::saveplyFile);
     }
@@ -155,7 +167,8 @@ void OpenGLPCL::setSavePLYfile(QString file_name, bool save_specific_range, uint
 
 void OpenGLPCL::end_ply_saving_thread()
 {
-    if (ply_thread_running) {
+    if (ply_thread_running)
+    {
         ply_thread_running = false;
         if (savePLYThread.isRunning()) {
             savePLYThread.waitForFinished();
@@ -169,6 +182,7 @@ void OpenGLPCL::saveplyFile()
 
     while(ply_thread_running)
     {
+        //Added to save ply frames
 #ifdef  __linux__
         usleep(1000);
 #elif _WIN32
@@ -240,76 +254,92 @@ void OpenGLPCL::DisplayVideoFrame(unsigned char* depth_data, unsigned char* rgb_
         break;
     }
 	float fx, fy, cx, cy;
+	//if (frameWidth == 640 && frameHeight == 480)
+	//{
+ //       focalLengthx = FOCUS_POINT_VGA_X;
+ //       focalLengthy = FOCUS_POINT_VGA_Y;
+ //       principlePointx = PRINCIPLE_AXIS_VGA_X;
+ //       principlePointy = PRINCIPLE_AXIS_VGA_Y;
+	//}
+	//else if (frameWidth == 1280 && frameHeight == 720)
+	//{
+ //       focalLengthx = FOCUS_POINT_HD_X;
+ //       focalLengthy = FOCUS_POINT_HD_Y;
+ //       principlePointx = PRINCIPLE_AXIS_HD_X;
+ //       principlePointy = PRINCIPLE_AXIS_HD_Y;
+	//}
     float zoom_factor = 1.0;
     int count = 0;
     float Z;
     uint16_t raw_depth;
-    int u, v;
     float x,y,z;
 
     DepthImg = cv::Mat(frameHeight,frameWidth,CV_16UC1);
 	memcpy(DepthImg.data, (uint8_t*)srcBuffer, frameHeight * frameWidth * 2);
-	if (rgb_data != NULL) {
+	if (rgb_data != NULL)
+	{
 		Depthcolormap = cv::Mat(frameHeight, frameWidth, CV_8UC3, (uint8_t*)rgb_data);
 	}
 
-    if (savePLYfile) {
+    if (savePLYfile)
+    {
         points.clear();
     }
 
     DepthImg.convertTo(DepthFloat, CV_32F);
     if (!DepthFloat.data) {
-        qDebug() << "convertTo Failed";
+        PrintLog(LOG_ESSENTIAL_DEBUG, "convertTo Failed");
     }
 
-    if (rgb_data == NULL) {
+    if (rgb_data == NULL)
+    {
 		DepthImg.convertTo(PrevDepthFrame, CV_8UC1, alpha, -beta);
 
         applyColorMap(PrevDepthFrame, Depthcolormap, colorMap);
     }
 
-    for (v = 0; v < DepthFloat.rows; v++) {
-        for (u = 0; u < DepthFloat.cols; u++) {
-            Z = DepthFloat.at<float>(v, u) / zoom_factor;
-            raw_depth = DepthImg.at<uint16_t>(v, u);
+    for (int row = 0; row < DepthFloat.rows; row++) {
+        for (int col = 0; col < DepthFloat.cols; col++) {
+        Z = DepthFloat.at<float>(row, col) / zoom_factor;
+        raw_depth = DepthImg.at<uint16_t>(row, col);
 
-            if (raw_depth < depth_min_val || raw_depth > depth_max_val) {
-                imgdata[count] = 0;
-                imgdata[count + 1] = 0;
-                imgdata[count + 2] = 0;
-                count += 3;
-                continue;
-            }
-            if (currentDepthRange == 1) {
-                z = Z * 2;
-                x = (u - principlePointx) * Z * 2/ focalLengthx;
-                y = ((v - principlePointy) * Z * 2/ focalLengthy);
-            }
-            else {
-                z = Z;
-                x = (u - principlePointx) * Z / focalLengthx;
-                y = ((v - principlePointy) * Z / focalLengthy);
-            }
-            imgdata[count] = x ;
-            imgdata[count+1] = -y ;
-            imgdata[count+2] = -z ;
+        if (raw_depth < depth_min_val || raw_depth > depth_max_val)
+        {
+            imgdata[count] = 0;
+            imgdata[count + 1] = 0;
+            imgdata[count + 2] = 0;
             count += 3;
-            if (savePLYfile) {
-                if (savePLYSpecificRange && ((raw_depth < depth_min_val_ply) || (raw_depth > depth_max_val_ply)))
-                    continue;
-                pclPoint.xyz[0] = x / 1000;
-                pclPoint.xyz[1] = -y / 1000;
-                pclPoint.xyz[2] = -z / 1000;
-                pclPoint.rgb[0] = Depthcolormap.at<cv::Vec3b>(v, u)[0];
-                pclPoint.rgb[1] = Depthcolormap.at<cv::Vec3b>(v, u)[1];
-                pclPoint.rgb[2] = Depthcolormap.at<cv::Vec3b>(v, u)[2];
-                points.push_back(pclPoint);
-            }
+            continue;
+        }
+
+		z = Z;
+		x = (col - principlePointx) * Z/ focalLengthx;
+		y = ((row - principlePointy) * Z/ focalLengthy);
+
+           imgdata[count] = x ;
+           imgdata[count+1] = -y ;
+           imgdata[count+2] = -z ;
+           count += 3;
+           if (savePLYfile)
+           {
+               if (savePLYSpecificRange && ((raw_depth < depth_min_val_ply) || (raw_depth > depth_max_val_ply)))
+                   continue;
+               pclPoint.xyz[0] = x / 1000;  // to convert to millimeter it is divided by 1000
+               pclPoint.xyz[1] = -y / 1000;
+               pclPoint.xyz[2] = -z / 1000;
+               pclPoint.rgb[0] = Depthcolormap.at<cv::Vec3b>(row, col)[0];
+               pclPoint.rgb[1] = Depthcolormap.at<cv::Vec3b>(row, col)[1];
+               pclPoint.rgb[2] = Depthcolormap.at<cv::Vec3b>(row, col)[2];
+               points.push_back(pclPoint);
+           }
+
+
         }
     }
 	
 
-    if (savePLYfile) {
+    if (savePLYfile)
+    {
         save_cloud_ready = true;
         savePLYfile = false;
     }
@@ -340,7 +370,8 @@ void OpenGLPCL::shaderRGB()
 
     //Compile the vertex shader program
     bool bCompile = impl->mVShader->compileSourceCode(vsrc);
-    if(!bCompile) {
+    if(!bCompile)
+    {
         throw OpenGlExceptionPCL();
     }
 
@@ -348,6 +379,8 @@ void OpenGLPCL::shaderRGB()
     impl->mFShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
 
     // Fragment shader source code
+
+
     const char *fsrc = "#ifdef GL_ES\n"
                      "precision highp float;\n"
                      "#endif\n"
@@ -362,7 +395,8 @@ void OpenGLPCL::shaderRGB()
 
 
     bCompile = impl->mFShader->compileSourceCode(fsrc);
-    if(!bCompile) {
+    if(!bCompile)
+    {
         throw OpenGlExceptionPCL();
     }
 
@@ -416,7 +450,7 @@ void OpenGLPCL::renderRGB()
     impl->mShaderProgram->setUniformValue(viewID,ViewMatrix);
     impl->mShaderProgram->setUniformValue(projectionID,ProjectionMatrix);
     renderMutex.lock();
-    if(gotFrame) {
+    if(gotFrame){
         glDrawArrays(GL_POINTS, 0, impl->mVideoW*impl->mVideoH);
     }
     vao.release();
@@ -454,7 +488,7 @@ void OpenGLPCL::initializeGL()
     vbo1.release();
 
     vao.release();
-    glClearColor (0, 0, 0, 1);
+    glClearColor (0, 0, 0, 1); // set the background color
 }
 
 void OpenGLPCL::resizeGL(int w, int h)
@@ -469,9 +503,9 @@ void OpenGLPCL::resizeGL(int w, int h)
 
 void OpenGLPCL::paintGL()
 {
-    if(gotFrame) {
+    if(gotFrame){
 
-        if(impl->mShaderProgram) {
+        if(impl->mShaderProgram){
             switch (pixelFormat) {
             case RGB_PCL:
                 renderRGB();
@@ -484,8 +518,13 @@ void OpenGLPCL::paintGL()
 
 void OpenGLPCL::computeMatricesFromInputs()
 {
-    if(initialPos) {
-        initialFoV = 15;
+    if(initialPos)
+    {
+		if (currentDepthRange == 1)
+			initialFoV = 30;
+		else
+			initialFoV = 15;
+
         local_qrot = local_qrot.fromEulerAngles(local_rot);
         ViewMatrix.setToIdentity();
         ViewMatrix.translate(local_pos);
@@ -530,11 +569,15 @@ void OpenGLPCL::mouseMoveEvent(QMouseEvent *event){
 
 void OpenGLPCL::wheelEvent(QWheelEvent *event)
 {
-    if(event->delta()>0) {
+    if(event->delta()>0)
+    {
         initialFoV -= 0.5f;                         //for zoom out have to decrease FoV
+
     }
-    else if(event->delta()<=0) {
+    else if(event->delta()<=0)
+    {
         initialFoV += 0.5f;                         //for zoom in have to increase FoV
+
     }
 
     if (initialFoV < 0.5f)              //maximum zoom
@@ -567,9 +610,14 @@ void OpenGLPCL::getColorMapProp(uint16_t depthMin, uint16_t depthMax, uint16_t c
     alpha = (255 / (double)(depthMax - depthMin));
     beta = ((double)alpha) * depthMin;
 	currentDepthRange = depthRange;
+
 }
+
 void OpenGLPCL::setInitialPos()
 {
-    initialFoV = 15;
+	if (currentDepthRange == 1)
+		initialFoV = 30;
+	else
+		initialFoV = 15;
     initialPos = true;
 }

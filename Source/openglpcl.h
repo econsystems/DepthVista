@@ -45,6 +45,9 @@ struct color_point_t
 #define PRINCIPLE_AXIS_HD_X             640
 #define PRINCIPLE_AXIS_HD_Y             360
 
+#define LOG_HIGH_DEBUG              1
+#define LOG_CRITICAL_DEBUG          3
+#define LOG_ESSENTIAL_DEBUG         7
 
 class OpenGLPCL : public QOpenGLWidget, public QOpenGLFunctions
 {
@@ -52,7 +55,7 @@ class OpenGLPCL : public QOpenGLWidget, public QOpenGLFunctions
 public:
     explicit OpenGLPCL(QWidget* parent = nullptr,PixelformatPCL pixformat = UYVY_PCL);
     ~OpenGLPCL();
-    QMutex							renderMutex;
+    QMutex							renderMutex; // mutex to use in rendering
     bool							gotFrame;
     double							alpha, beta;
     uint16_t						colorMap;
@@ -87,11 +90,14 @@ public:
     QMatrix4x4						ViewMatrix;
     QMatrix4x4						ProjectionMatrix;
     QMatrix4x4						cameraMatrix;
+    // Initial position : on +Z
     QVector3D						position;
     QPoint							lastMousePos;
     float							horizontalAngle;
     float							verticalAngle;
+    // Initial Field of View
     float							initialFoV;
+    //Initial camera position
     bool							initialPos;
 
     QOpenGLVertexArrayObject		vao;
@@ -138,6 +144,8 @@ private:
     bool                            ply_thread_running = false;
 
 };
+
+/***********************************************************************/
 
 class OpenGlExceptionPCL: public QException
 {

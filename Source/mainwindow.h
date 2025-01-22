@@ -30,7 +30,6 @@
 #define PRE_RGB_VGA_HEIGHT		480
 #define PRE_RGB_HD_WIDTH		1280
 #define PRE_RGB_HD_HEIGHT		720
-
 // Preview RGB Full HD Image Resolution 1920x1080
 #define PRE_RGB_FULL_HD_WIDTH	1920
 #define PRE_RGB_FULL_HD_HEIGHT	1080
@@ -49,7 +48,11 @@
 #define LENS_PRINCIPLE_AXIS_HD_X             640
 #define LENS_PRINCIPLE_AXIS_HD_Y             360
 
-typedef enum 
+#define LOG_HIGH_DEBUG              1
+#define LOG_CRITICAL_DEBUG          3
+#define LOG_ESSENTIAL_DEBUG         7
+
+typedef enum
 {
     All = 0,
     ToF_cam = 1,
@@ -69,10 +72,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void callback(int a);
-    void notification_callback(int a);
+    void callback(int a, int deviceIndex);
+    void notification_callback(int a, int deviceIndex);
+    void getInclination(double w_x, double w_y, double w_z, double a_x, double a_y, double a_z);
+    IMUDATAOUTPUT_TypeDef* lIMUOutput = NULL;
+
 signals:
-    Q_SIGNAL void deviceEnumerated(QStringList devices);
+    //Q_SIGNAL void deviceEnumerated(QStringList devices);
+    Q_SIGNAL void deviceEnumerated(QStringList devices, int streamingDevIndexInList);
 
     Q_SIGNAL void dataModeQueried(DataMode cDataMode);
     Q_SIGNAL void depthRangeQueried(uint16_t cDepthRange);
@@ -87,13 +94,16 @@ signals:
     Q_SIGNAL void updateData(int avgDepth, int stdDepth, int avgIR, int stdIR);
     Q_SIGNAL void savingFramesComplete();
     Q_SIGNAL void othersavedoneplyfail();
+    Q_SIGNAL void saveFailedDueToInvalidPath();
     Q_SIGNAL void tofCamModeSelected(bool ir_mode);
     Q_SIGNAL void dualCamModeSelected(bool vgaMode);
-    Q_SIGNAL void rgbCamModeSelected();
+    Q_SIGNAL void rgbCamModeSelected(uint8_t frameRateCtrl, uint32_t expoComp, uint8_t ROIMode, uint8_t winSize);
     Q_SIGNAL void deviceRemoved();
     Q_SIGNAL void firmwareVersionRead(uint8_t gMajorVersion, uint8_t gMinorVersion1, uint16_t gMinorVersion2, uint16_t gMinorVersion3);
     Q_SIGNAL void uniqueIDRead(uint64_t uniqueID);
     Q_SIGNAL void tofSettingsDefault();
+    Q_SIGNAL void imuValues(int x, int y, int z);
+    Q_SIGNAL void framesStopped(int index);
 
 protected slots:
     Q_SLOT void enumerateDevices();
@@ -112,12 +122,21 @@ protected slots:
     Q_SLOT void onPCLDisplay_checkBox_stateChange(bool state);
     Q_SLOT void onRGBDMapping_checkBox_stateChange(int state);
     Q_SLOT void onUndistort_checkBox_stateChange(int state);
+    Q_SLOT void onIMUValshowToggled(bool state);
+	Q_SLOT void onFlyingPixelToggled(int state);
+
 private:
     int									oldindex = 0;
-    DataMode							data_mode = ModeUnknown;
+    DataMode							data_mode;
     uint16_t							depthRange = 0;
     Ui::MainWindow						*ui;
     DeviceInfo							*gDevicesList;
+    DeviceHandle                        devHandle;
+    DeviceHandle                        openDeviceHandle;
+    std::vector<DeviceHandle>           devHandleList;
+    std::vector<DeviceHandle>           enumeratedHandleList;
+    CalibrationParams                   devCalibrationData;
+	bool								deviceOpened = false;
     Cameraproperties					*side_menu;
 
     OpenGLDisplay*						yuvdisplay = NULL;
@@ -132,6 +151,7 @@ private:
 	bool								rgbIntrinsicData = false;
 	bool								extrinsicData = false;
 	bool								undistortDepth = false;
+    bool                                deviceCalibData = false;
     int									depth_range;
 	int									count = 0;
     bool                                plyImageSaveStatus = true;
@@ -154,7 +174,7 @@ private:
     cv::Mat								UYVY_frame;
     cv::Mat								UYVY_frame_cpy;
     cv::Mat								rgbFrame;
-	QMutex								renderMutex;
+	QMutex								renderMutex; // mutex to use in rendering
 	uint64_t							skippedFrames = 0;
 	bool								first_occurance = true;
 
@@ -225,6 +245,7 @@ private:
     cv::Mat								registeredDepth;
     cv::Mat								registeredDepthHD;
     cv::Mat								writeRegisteredDepthHD;
+    cv::Mat								writeRegisteredDepthHDRaw;
     double								alpha, beta;
     double								x_comp = 0, y_comp = 0;
 
@@ -240,6 +261,13 @@ private:
     double								full_hd_aspect_ratio = 1920.00/1080.00;
     double								rgb_1200p_aspect_ratio = 1920.00/1200.00;
 
+    IMUDATAINPUT_TypeDef                lIMUInput, glIMUInput;
+    IMUCONFIG_TypeDef                   lIMUConfig;
+    double                              glIMU_Interval;
+    bool								showIMUFlag = false;
+    double                              angleX, angleY, angleZ;
+    double                              RwEst[3];
+
     void getFrame();
     void createDisplayComponents();
     void modifyUi(DataMode dataMode);
@@ -248,6 +276,9 @@ private:
     void stopStream();
     void querycameraproperties(uint8_t cam);
 	void framesPerSecondDisplay();
+    double GetIMUIntervalTime(IMUCONFIG_TypeDef	lIMUConfig);
+    double squared(double x);
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void resizeEvent(QResizeEvent *event);

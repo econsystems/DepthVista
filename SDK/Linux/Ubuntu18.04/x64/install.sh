@@ -12,7 +12,9 @@ SHAREDIR="$PREFIX/usr/local/share"
 INCLUDEDIR="$PREFIX/usr/local/include"
 
 
-echo "Installing DepthVistaSDK with prefix $PREFIX..."
+echo "Installing DepthVistaSDK"
+cd $LIBDIR
+rm libDepthVistaSDK.*
 
 cd $SHAREDIR/
 if [ ! -d "DepthVistaSDK" ]; then
@@ -24,7 +26,7 @@ if [ ! -d "cmake" ]; then
 fi
 cd $STARTDIR
 cp cmake/* $SHAREDIR/DepthVistaSDK/cmake
-echo "Share done\n"
+echo "Share done"
 
 cd $INCLUDEDIR/
 if [ ! -d "DepthVistaSDK" ]; then
@@ -32,14 +34,15 @@ if [ ! -d "DepthVistaSDK" ]; then
 fi
 cd $STARTDIR
 cp -r include/* $INCLUDEDIR/DepthVistaSDK
-echo "Include done\n"
+echo "Include done"
 
 cp so/* $LIBDIR/
 rsync -l so/libDepthVistaSDK.so* $LIBDIR/
 rsync -l so/libopencv_world.so* $LIBDIR/
-echo "Lib done\n"
+echo "Lib done"
 
-
+cp 99-depthvista-permissions.rules /etc/udev/rules.d
+udevadm trigger
 
 echo "Installing DepthVistaSDK success."
 

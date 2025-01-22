@@ -54,7 +54,7 @@ endif()
 add_library(DepthVistaSDK SHARED IMPORTED)
 
 set_target_properties(DepthVistaSDK PROPERTIES
-  INTERFACE_LINK_LIBRARIES "opencv_calib3d;opencv_core;opencv_dnn;opencv_features2d;opencv_flann;opencv_gapi;opencv_highgui;opencv_imgcodecs;opencv_imgproc;opencv_ml;opencv_objdetect;opencv_photo;opencv_stitching;opencv_video;opencv_videoio;opencv_world;opencv_rgbd;udev"
+  INTERFACE_LINK_LIBRARIES "udev;opencv_calib3d;opencv_core;opencv_features2d;opencv_flann;opencv_imgcodecs;opencv_imgproc;opencv_ml;opencv_photo;opencv_stitching;opencv_video;opencv_videoio;opencv_world;opencv_alphamat;opencv_freetype;opencv_reg;opencv_rgbd;opencv_viz"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)
